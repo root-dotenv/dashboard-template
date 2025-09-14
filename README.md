@@ -1,69 +1,15 @@
-# React + TypeScript + Vite
+"Ask and it will be given to you; seek and you will find; knock and the door will be opened to you." - **Matthew 7:7-8**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+### **Explanation of Matthew 7:7-8**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The verses from Matthew 7:7-8 are a core part of Jesus's Sermon on the Mount, emphasizing the principles of prayer and faith. This passage is a promise from Jesus, encouraging believers to approach God with persistence and confidence.
 
-## Expanding the ESLint configuration
+- **"Ask and it will be given to you"**: This phrase highlights the importance of **prayer**. It is an invitation to bring our requests, needs, and desires to God. The promise is that when we ask, God will answer, though the answer may not always be what we expect or desire, but what is best for us.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **"Seek and you will find"**: This goes beyond simply asking. It implies a more active and diligent search for **spiritual truth, wisdom, and a closer relationship with God**. This part of the verse encourages us to actively pursue God's will and presence in our lives, assuring us that our efforts to know Him will be fruitful.
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **"Knock and the door will be opened to you"**: This final phrase speaks to **persistence**. It is a metaphor for a continuous and unwavering effort to gain access to something. In a spiritual context, it signifies a determined effort to enter into God's presence or to receive His blessings. The promise here is that this persistent faith will be rewarded by God opening the way for us.
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+In essence, these verses teach that prayer and seeking God are not passive acts but require faith, persistence, and sincere effort. They are a powerful assurance that God is a loving Father who listens to His children and responds to their needs.
