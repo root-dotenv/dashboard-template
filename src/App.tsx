@@ -1,15 +1,7 @@
-import { Badge } from "./components/ui/badge";
-import { Button } from "./components/ui/button";
-
 function App() {
   return (
     <>
-      <div className="w-screen h-screen flex items-center gap-4 justify-center">
-        <Badge variant={"success"}>success</Badge>
-        <Badge variant={"pending"}>pending</Badge>
-        <Badge variant={"failed"}>failed</Badge>
-        <Button variant={"main"}>Create Booking</Button>
-      </div>
+      <p>Test</p>
     </>
   );
 }
