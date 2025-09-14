@@ -1,9 +1,7 @@
-function App() {
+export default function App() {
   return (
-    <>
-      <p>Test</p>
-    </>
+    <div>
+      <p>Hello world</p>
+    </div>
   );
 }
-
-export default App;
