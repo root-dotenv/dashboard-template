@@ -1,4 +1,5 @@
 import { Badge } from "./components/ui/badge";
+import { Button } from "./components/ui/button";
 
 function App() {
   return (
@@ -7,6 +8,7 @@ function App() {
         <Badge variant={"success"}>success</Badge>
         <Badge variant={"pending"}>pending</Badge>
         <Badge variant={"failed"}>failed</Badge>
+        <Button variant={"main"}>Create Booking</Button>
       </div>
     </>
   );

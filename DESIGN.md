@@ -55,3 +55,4 @@
 
 \_ Primary Blue Background (#465FFF)
 \_ Hover Blue Background (#3641F5)
+\_ Text Color (#FFF)

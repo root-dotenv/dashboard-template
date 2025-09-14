@@ -17,6 +17,7 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        //  - - - custom themed "badge variant"
         success:
           "flex items-center justify-center bg-[#ECFDF3] rounded-full border border-green-200 text-[13px] text-[#039855] font-medium px-[12px] py-[1.75px]",
         pending:
