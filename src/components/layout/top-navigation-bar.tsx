@@ -72,21 +72,23 @@ export function TopNavigationBar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* NavUser (Redesigned to match screenshot) */}
+        {/* NavUser with Pill Design */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="group p-0 flex items-center gap-2 bg-[#FFF]">
-              <Avatar className="h-10 w-10 border bg-[#FFF] border-[#E4E7EC]">
+            <div
+              role="button"
+              className="group flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 p-[5px] pr-3 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
+              <Avatar className="h-8 w-8">
                 <AvatarImage
                   src={navData.user.avatar}
                   alt={navData.user.name}
-                  className="bg-[#FFF]"
                 />
-                <AvatarFallback className="bg-[#FFF]">
+                <AvatarFallback className="text-[#344054] bg-[#F2F4F7]">
                   {navData.user.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden text-sm bg-[#FFF] font-semibold text-gray-900 dark:text-white md:block">
+              <span className="hidden text-sm font-semibold text-gray-900 dark:text-white md:block">
                 {navData.user.name}
               </span>
               <ChevronDown className="hidden h-4 w-4 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-gray-400 md:block" />

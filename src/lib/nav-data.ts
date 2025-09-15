@@ -60,21 +60,34 @@ export const navData = {
       items: [
         { title: "Check-in", url: "/reservations/checkin" },
         { title: "Check-out", url: "/reservations/checkout" },
+        { title: "Special Requests", url: "/reservations/special-requests" },
       ],
     },
     {
       title: "House Keeping",
       icon: MdOutlineInventory2,
       items: [
+        { title: "Departments", url: "/house-keeping/departments" },
+
+        {
+          title: "Inventory Categories",
+          url: "/house-keeping/inventory-categories",
+        },
         { title: "Inventory Items", url: "/house-keeping/inventory-items" },
+        {
+          title: "Event Spaces Types",
+          url: "/house-keeping/event-space-types",
+        },
         { title: "Event Spaces", url: "/house-keeping/event-spaces" },
       ],
     },
+
     {
       title: "Billings & Payments",
       icon: MdPayment,
       items: [
         { title: "Payouts", url: "/billings/payouts" },
+        { title: "Charges", url: "/billings/charges" },
         { title: "Invoices", url: "/billings/invoices" },
       ],
     },

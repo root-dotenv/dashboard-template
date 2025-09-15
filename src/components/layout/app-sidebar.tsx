@@ -221,7 +221,7 @@ export function AppSidebar() {
         <div className="mt-auto">
           {/* Footer CTA Card */}
           <div className="p-4 dark:border-gray-700">
-            <div className="p-4 rounded-lg shadow-xs bg-[#F9FAFB] border border-[#E4E7EC] text-center dark:bg-gray-800">
+            <div className="p-4 rounded-lg bg-[#F9FAFB] border-[0.9px] border-[#E4E7EC] text-center dark:bg-gray-800">
               <h3 className="font-bold text-sm text-gray-900 dark:text-white">
                 The All-in-One Platform
               </h3>
