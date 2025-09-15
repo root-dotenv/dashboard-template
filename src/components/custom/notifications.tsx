@@ -2,14 +2,6 @@
 
 "use client";
 import { useState } from "react";
-import { BellIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 
 // Custom types for notifications
@@ -38,6 +30,7 @@ function Dot({ className }: { className?: string }) {
   );
 }
 
+// The component now only renders the list, not the popover wrapper
 export function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -104,80 +97,58 @@ export function Notifications() {
   };
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative hover:bg-accent"
-          aria-label="Open notifications"
-        >
-          <BellIcon className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center"
+    <>
+      <div className="flex items-baseline rounded-2xl justify-between gap-4 px-4 py-3">
+        <h3 className="text-sm font-semibold">Notifications</h3>
+        {unreadCount > 0 && (
+          <button
+            className="text-xs font-medium text-primary hover:underline"
+            onClick={handleMarkAllAsRead}
+          >
+            Mark all as read
+          </button>
+        )}
+      </div>
+      <Separator />
+      <div className="max-h-[400px]  overflow-y-auto">
+        {notifications.length > 0 ? (
+          notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className="hover:bg-accent transition-colors"
             >
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end" sideOffset={10}>
-        <div className="flex items-baseline justify-between gap-4 px-4 py-3">
-          <h3 className="text-sm font-semibold">Notifications</h3>
-          {unreadCount > 0 && (
-            <button
-              className="text-xs font-medium text-primary hover:underline"
-              onClick={handleMarkAllAsRead}
-            >
-              Mark all as read
-            </button>
-          )}
-        </div>
-        <Separator />
-        <div className="max-h-[400px] overflow-y-auto">
-          {notifications.length > 0 ? (
-            notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className="hover:bg-accent transition-colors"
-              >
-                <div className="relative flex items-start px-4 py-3">
-                  <div className="flex-1 space-y-1">
-                    <button
-                      className="text-left w-full after:absolute after:inset-0"
-                      onClick={() => handleNotificationClick(notification.id)}
-                    >
-                      <p className="text-sm">
-                        <span className="font-medium">{notification.user}</span>{" "}
-                        {notification.action}{" "}
-                        <span className="font-medium">
-                          {notification.target}
-                        </span>
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {notification.timestamp}
-                      </p>
-                    </button>
-                  </div>
-                  {notification.unread && (
-                    <div className="absolute right-4 top-4">
-                      <span className="sr-only">Unread</span>
-                      <Dot className="text-primary" />
-                    </div>
-                  )}
+              <div className="relative flex items-start px-4 py-3">
+                <div className="flex-1 space-y-1">
+                  <button
+                    className="text-left w-full after:absolute after:inset-0"
+                    onClick={() => handleNotificationClick(notification.id)}
+                  >
+                    <p className="text-sm">
+                      <span className="font-medium">{notification.user}</span>{" "}
+                      {notification.action}{" "}
+                      <span className="font-medium">{notification.target}</span>
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {notification.timestamp}
+                    </p>
+                  </button>
                 </div>
-                <Separator />
+                {notification.unread && (
+                  <div className="absolute right-4 top-4">
+                    <span className="sr-only">Unread</span>
+                    <Dot className="text-primary" />
+                  </div>
+                )}
               </div>
-            ))
-          ) : (
-            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-              No notifications
+              <Separator />
             </div>
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+          ))
+        ) : (
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+            No notifications
+          </div>
+        )}
+      </div>
+    </>
   );
 }

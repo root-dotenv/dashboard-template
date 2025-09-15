@@ -1,11 +1,13 @@
 // src/lib/nav-data.ts
-import { User, Bed, MessageSquare, Ticket } from "lucide-react";
+import { Bed, PieChart } from "lucide-react";
 import { FiUserCheck } from "react-icons/fi";
 import { MdOutlineInventory2 } from "react-icons/md";
 import { BsGrid } from "react-icons/bs";
 import { RiHotelLine } from "react-icons/ri";
 import { HiOutlineTicket } from "react-icons/hi2";
 import { MdPayment } from "react-icons/md";
+import { HiOutlineDocumentReport } from "react-icons/hi";
+import { BiSupport } from "react-icons/bi";
 
 export const navData = {
   // The user object that was missing
@@ -79,12 +81,12 @@ export const navData = {
   ],
   // Support links that you wanted to keep
   supportLinks: [
-    { title: "Analytics", icon: MessageSquare, url: "/analytics" },
+    { title: "Analytics", icon: PieChart, url: "/analytics" },
     {
       title: "Reports",
-      icon: Ticket,
+      icon: HiOutlineDocumentReport,
       url: "/reports",
     },
-    { title: "Support", icon: User, url: "/support" },
+    { title: "Support", icon: BiSupport, url: "/support" },
   ],
 };

@@ -3,7 +3,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { createBrowserRouter, Outlet } from "react-router-dom";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import MainHomePage from "@/pages/main-homepage";
-import PlaceholderPage from "@/pages/placeholder-page"; // <-- Import placeholder
+import PlaceholderPage from "@/pages/placeholder-page";
 
 const RootLayout = () => {
   return (
