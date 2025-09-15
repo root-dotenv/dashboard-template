@@ -1,5 +1,4 @@
 // src/components/custom/notifications.tsx
-
 "use client";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
@@ -99,23 +98,25 @@ export function Notifications() {
   return (
     <>
       <div className="flex items-baseline rounded-2xl justify-between gap-4 px-4 py-3">
-        <h3 className="text-sm font-semibold">Notifications</h3>
+        <h3 className="text-sm font-semibold dark:text-[#D0D5DD]">
+          Notifications
+        </h3>
         {unreadCount > 0 && (
           <button
-            className="text-xs font-medium text-primary hover:underline"
+            className="text-xs font-medium text-primary hover:underline dark:text-blue-400"
             onClick={handleMarkAllAsRead}
           >
             Mark all as read
           </button>
         )}
       </div>
-      <Separator />
+      <Separator className="dark:bg-[#1D2939]" />
       <div className="max-h-[400px]  overflow-y-auto">
         {notifications.length > 0 ? (
           notifications.map((notification) => (
             <div
               key={notification.id}
-              className="hover:bg-accent transition-colors"
+              className="hover:bg-accent transition-colors dark:hover:bg-[#1C2433]"
             >
               <div className="relative flex items-start px-4 py-3">
                 <div className="flex-1 space-y-1">
@@ -123,12 +124,12 @@ export function Notifications() {
                     className="text-left w-full after:absolute after:inset-0"
                     onClick={() => handleNotificationClick(notification.id)}
                   >
-                    <p className="text-sm">
+                    <p className="text-sm dark:text-[#D0D5DD]">
                       <span className="font-medium">{notification.user}</span>{" "}
                       {notification.action}{" "}
                       <span className="font-medium">{notification.target}</span>
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-muted-foreground text-xs dark:text-[#98A2B3]">
                       {notification.timestamp}
                     </p>
                   </button>
@@ -136,15 +137,15 @@ export function Notifications() {
                 {notification.unread && (
                   <div className="absolute right-4 top-4">
                     <span className="sr-only">Unread</span>
-                    <Dot className="text-primary" />
+                    <Dot className="text-primary dark:text-blue-400" />
                   </div>
                 )}
               </div>
-              <Separator />
+              <Separator className="dark:bg-[#1D2939]" />
             </div>
           ))
         ) : (
-          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground dark:text-[#98A2B3]">
             No notifications
           </div>
         )}

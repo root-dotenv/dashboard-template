@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserMenuItems } from "./user-menu-items";
 
-// --- Sub-component for individual navigation items ---
 const NavItem = ({
   item,
   isCollapsed,
@@ -53,8 +52,8 @@ const NavItem = ({
             "flex w-full items-center rounded-lg p-2 transition-colors duration-200",
             isCollapsed ? "justify-center" : "justify-between",
             isActive
-              ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-              : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              ? "bg-blue-50 text-blue-700 dark:bg-[#162142]" // Active state
+              : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433]" // Inactive state
           )}
         >
           <div className="flex items-center gap-3">
@@ -62,15 +61,15 @@ const NavItem = ({
               className={cn(
                 "h-5 w-5",
                 isActive
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-[#344055] dark:text-gray-400"
+                  ? "text-blue-600 dark:text-[#7592FF]"
+                  : "text-[#344055] dark:text-[#D0D5DD]"
               )}
             />
             {!isCollapsed && (
               <span
                 className={cn(
                   "text-sm font-medium",
-                  !isActive && "text-[#344055]"
+                  !isActive && "text-[#344055] dark:text-[#D0D5DD]"
                 )}
               >
                 {item.title}
@@ -79,8 +78,8 @@ const NavItem = ({
           </div>
           {!isCollapsed && (
             <>
-              <ChevronDown className="h-4 w-4 data-[state=open]:hidden" />
-              <ChevronUp className="h-4 w-4 hidden data-[state=open]:block" />
+              <ChevronDown className="h-4 w-4 data-[state=open]:hidden dark:text-[#98A2B3]" />
+              <ChevronUp className="h-4 w-4 hidden data-[state=open]:block dark:text-[#98A2B3]" />
             </>
           )}
         </CollapsibleTrigger>
@@ -95,8 +94,8 @@ const NavItem = ({
                   className={cn(
                     "p-2 text-sm rounded-md transition-colors duration-200",
                     isChildActive
-                      ? "bg-blue-100/80 font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-200"
-                      : "text-[#667085] hover:bg-gray-100/50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200"
+                      ? "bg-blue-100/80 font-medium text-blue-700 dark:bg-[#162142] dark:text-[#7592FF]"
+                      : "text-[#667085] hover:bg-gray-100/50 hover:text-gray-800 dark:text-[#98A2B3] dark:hover:bg-[#1C2433]"
                   )}
                 >
                   {child.title}
@@ -109,7 +108,6 @@ const NavItem = ({
     );
   }
 
-  // --- Render item without children ---
   return (
     <Link
       to={item.url}
@@ -117,8 +115,8 @@ const NavItem = ({
         "flex w-full items-center rounded-lg p-2 transition-colors duration-200",
         isCollapsed ? "justify-center" : "justify-between",
         isActive
-          ? "bg-blue-50 text-blue-700 font-semibold dark:bg-blue-900/30 dark:text-blue-300"
-          : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          ? "bg-blue-50 text-blue-700 font-semibold dark:bg-[#162142]"
+          : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433]"
       )}
     >
       <div className="flex items-center gap-3">
@@ -126,13 +124,16 @@ const NavItem = ({
           className={cn(
             "h-5 w-5",
             isActive
-              ? "text-blue-600 dark:text-blue-400"
-              : "text-[#344055] dark:text-gray-400"
+              ? "text-blue-600 dark:text-[#7592FF]"
+              : "text-[#344055] dark:text-[#D0D5DD]"
           )}
         />
         {!isCollapsed && (
           <span
-            className={cn("text-sm font-medium", !isActive && "text-[#344055]")}
+            className={cn(
+              "text-sm font-medium",
+              !isActive && "text-[#344055] dark:text-[#D0D5DD]"
+            )}
           >
             {item.title}
           </span>
@@ -142,7 +143,6 @@ const NavItem = ({
   );
 };
 
-// --- Main Sidebar Component ---
 export function AppSidebar() {
   const { isCollapsed } = useSidebarStore();
   const location = useLocation();
@@ -159,24 +159,21 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col h-screen bg-[#FFF] border-r border-[#E4E7EC] transition-all duration-300 dark:bg-gray-900 dark:border-[#344055]",
+        "hidden md:flex flex-col h-screen bg-[#FFF] border-r border-[#E4E7EC] transition-all duration-300 dark:bg-[#101828] dark:border-[#1D2939]",
         isCollapsed ? "w-20" : "w-68"
       )}
     >
-      {/* Header */}
-      <div className="flex items-center h-16 border-b px-6 dark:border-gray-700">
+      <div className="flex items-center h-16 border-b px-6 dark:border-[#1D2939]">
         {!isCollapsed && (
-          <h1 className="text-[20px] font-bold text-gray-900 dark:text-white">
+          <h1 className="text-[20px] font-bold text-gray-900 dark:text-[#D0D5DD]">
             SafariPro Dashboard
           </h1>
         )}
       </div>
-
-      {/* Navigation */}
       <nav className="flex-1 space-y-2 p-4 overflow-y-auto">
         <div>
           {!isCollapsed && (
-            <h2 className="px-2 text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+            <h2 className="px-2 text-[11px] font-medium text-gray-400 uppercase tracking-wide dark:text-[#98A2B3]">
               Main Menu
             </h2>
           )}
@@ -196,7 +193,7 @@ export function AppSidebar() {
         </div>
         <div className="pt-4">
           {!isCollapsed && (
-            <h2 className="px-2 text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+            <h2 className="px-2 text-[11px] font-medium text-gray-400 uppercase tracking-wide dark:text-[#98A2B3]">
               Report Overview
             </h2>
           )}
@@ -215,17 +212,14 @@ export function AppSidebar() {
           </div>
         </div>
       </nav>
-
-      {/* Footer Section */}
       {!isCollapsed && (
         <div className="mt-auto">
-          {/* Footer CTA Card */}
-          <div className="p-4 dark:border-gray-700">
-            <div className="p-4 rounded-lg bg-[#F9FAFB] border-[0.9px] border-[#E4E7EC] text-center dark:bg-gray-800">
-              <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+          <div className="p-4">
+            <div className="p-4 rounded-lg bg-[#F9FAFB] border-[0.9px] border-[#E4E7EC] text-center dark:bg-[#171F2F] dark:border-[#1D2939]">
+              <h3 className="font-bold text-sm text-gray-900 dark:text-[#D0D5DD]">
                 The All-in-One Platform
               </h3>
-              <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
+              <p className="text-xs text-gray-500 mt-1 dark:text-[#98A2B3]">
                 Unlock tour management, car rentals, and unified analytics to
                 streamline your business.
               </p>
@@ -238,9 +232,7 @@ export function AppSidebar() {
               </Button>
             </div>
           </div>
-
-          {/* Logged-in User Card with Dropdown */}
-          <div className="p-4 border-t dark:border-gray-700">
+          <div className="p-4 border-t dark:border-[#1D2939]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
@@ -251,15 +243,14 @@ export function AppSidebar() {
                   <AvatarFallback>{navData.user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-[#D0D5DD]">
                     {navData.user.name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-xs text-gray-500 truncate dark:text-[#98A2B3]">
                     {navData.user.email}
                   </p>
                 </div>
               </div>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -267,14 +258,14 @@ export function AppSidebar() {
                     size="icon"
                     className="h-8 w-8 shrink-0"
                   >
-                    <MoreVertical className="h-4 w-4 text-gray-500" />
+                    <MoreVertical className="h-4 w-4 text-gray-500 dark:text-[#98A2B3]" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
                   align="start"
                   sideOffset={10}
-                  className="w-56 rounded-lg ml-3 mb-2"
+                  className="w-56 rounded-lg ml-3 mb-2 dark:bg-[#101828] dark:border-[#1D2939]"
                 >
                   <UserMenuItems user={navData.user} />
                 </DropdownMenuContent>
