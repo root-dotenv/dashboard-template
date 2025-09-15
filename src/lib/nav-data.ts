@@ -1,110 +1,79 @@
 // src/lib/nav-data.ts
 import {
+  User,
+  LayoutGrid,
+  ClipboardList,
+  Table,
+  FileText,
+  MessageSquare,
+  Ticket,
+  Mail,
   PieChart,
-  Hotel,
-  Bed,
-  Folder,
-  Share,
-  MoreHorizontal,
+  Layers,
+  Lock,
 } from "lucide-react";
-import { FiUserCheck } from "react-icons/fi";
-import { BiSupport } from "react-icons/bi";
-import { HiOutlineDocumentReport } from "react-icons/hi";
-import { LuTicketCheck } from "react-icons/lu";
-import { TbFileTypeCsv } from "react-icons/tb";
-import { MdOutlineFeedback } from "react-icons/md";
 
 export const navData = {
   user: {
-    name: "Root Dotenv",
-    email: "dotenv@ostub.com",
-    avatar: "/avatars/admin.jpg",
+    name: "Musharof",
+    email: "musharof@example.com",
+    avatar: "/avatars/shadcn.jpg", // Replace with a real avatar path
   },
   navMain: [
+    { title: "User Profile", icon: User, url: "#" },
     {
-      title: "Hotel Management",
+      title: "Task",
+      icon: ClipboardList,
       url: "#",
-      icon: Hotel,
-      items: [
-        { title: "My Hotel", url: "/hotel/hotel-details" },
-        { title: "Hotel Features", url: "/hotel/hotel-features" },
-      ],
+      items: [{ title: "Sub Task", url: "#" }],
     },
     {
-      title: "Bookings",
+      title: "Forms",
+      icon: LayoutGrid,
       url: "#",
-      icon: LuTicketCheck,
-      items: [
-        { title: "New Booking", url: "/bookings/new-booking" },
-        { title: "All Bookings", url: "/bookings/all-bookings" },
-        { title: "Safari Pro Bookings", url: "/bookings/safaripro-bookings" },
-      ],
+      items: [{ title: "Sub Form", url: "#" }],
     },
     {
-      title: "Rooms",
+      title: "Tables",
+      icon: Table,
       url: "#",
-      icon: Bed,
-      items: [
-        { title: "New Room", url: "/rooms/new-room" },
-        { title: "Available Rooms", url: "/rooms/available-rooms" },
-        { title: "Booked Rooms", url: "/rooms/booked-rooms" },
-        { title: "Maintenance Rooms", url: "/rooms/maintenance-rooms" },
-        { title: "Room Types", url: "/rooms/room-types" },
-        {
-          title: "Available Rooms By Dates",
-          url: "/rooms/available-rooms-dates",
-        },
-      ],
+      items: [{ title: "Sub Table", url: "#" }],
     },
     {
-      title: "Reservations",
+      title: "Pages",
+      icon: FileText,
       url: "#",
-      icon: FiUserCheck,
-      items: [
-        { title: "Checkin", url: "/reservations/checkin" },
-        { title: "Checkout", url: "/reservations/checkout" },
-        { title: "Cancelled", url: "/reservations/cancelled" },
-        { title: "Special Requests", url: "/reservations/special-requests" },
-      ],
+      items: [{ title: "Sub Page", url: "#" }],
     },
   ],
-  navSecondary: [
-    { title: "Support", url: "/support", icon: BiSupport },
-    { title: "Feedback", url: "/feedback", icon: MdOutlineFeedback },
-  ],
-  projects: [
+  supportLinks: [
+    { title: "Chat", icon: MessageSquare, url: "#" },
+    { title: "Support Ticket", icon: Ticket, url: "#", tag: "NEW" },
     {
-      name: "Analytics",
-      url: "/analytics",
+      title: "Email",
+      icon: Mail,
+      url: "#",
+      items: [{ title: "Sub Email", url: "#" }],
+    },
+  ],
+  otherLinks: [
+    {
+      title: "Charts",
       icon: PieChart,
+      url: "#",
+      items: [{ title: "Sub Chart", url: "#" }],
     },
     {
-      name: "Reports",
-      url: "/reports",
-      icon: HiOutlineDocumentReport,
-      actions: [
-        {
-          label: "View Reports",
-          url: "/view-reports",
-          icon: Folder,
-        },
-        {
-          label: "Share Report",
-          url: "/share-reports",
-          icon: Share,
-        },
-        {
-          label: "Export Report",
-          url: "/export-report",
-          icon: TbFileTypeCsv,
-        },
-      ],
+      title: "UI Elements",
+      icon: Layers,
+      url: "#",
+      items: [{ title: "Sub Element", url: "#" }],
     },
-  ],
-  moreLinks: [
-    { label: "Demo Link 1", url: "#", icon: MoreHorizontal },
-    { label: "Demo Link 2", url: "#", icon: MoreHorizontal },
-    { label: "Demo Link 3", url: "#", icon: MoreHorizontal },
-    { label: "Demo Link 4", url: "#", icon: MoreHorizontal },
+    {
+      title: "Authentication",
+      icon: Lock,
+      url: "#",
+      items: [{ title: "Sub Auth", url: "#" }],
+    },
   ],
 };
