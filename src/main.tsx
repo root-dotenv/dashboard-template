@@ -1,13 +1,12 @@
 // src/main.tsx
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider } from "react-router-dom";
-import { router } from "./routes";
+import App from "./App";
 import "./index.css";
 
-// Render the RouterProvider at the root of your application
+// Render the App component at the root of your application
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <App />
   </React.StrictMode>
 );

@@ -1,79 +1,90 @@
 // src/lib/nav-data.ts
-import {
-  User,
-  LayoutGrid,
-  ClipboardList,
-  Table,
-  FileText,
-  MessageSquare,
-  Ticket,
-  Mail,
-  PieChart,
-  Layers,
-  Lock,
-} from "lucide-react";
+import { User, Bed, MessageSquare, Ticket } from "lucide-react";
+import { FiUserCheck } from "react-icons/fi";
+import { MdOutlineInventory2 } from "react-icons/md";
+import { BsGrid } from "react-icons/bs";
+import { RiHotelLine } from "react-icons/ri";
+import { HiOutlineTicket } from "react-icons/hi2";
+import { MdPayment } from "react-icons/md";
 
 export const navData = {
+  // The user object that was missing
   user: {
-    name: "Musharof",
-    email: "musharof@example.com",
-    avatar: "/avatars/shadcn.jpg", // Replace with a real avatar path
+    name: "Dotenv",
+    email: "rootdotenv@safaripro.com",
+    avatar: "/avatars/shadcn.jpg",
   },
+
+  // Main navigation items for the hotel dashboard
   navMain: [
-    { title: "User Profile", icon: User, url: "#" },
+    { title: "Main Overview", icon: BsGrid, url: "/" },
     {
-      title: "Task",
-      icon: ClipboardList,
-      url: "#",
-      items: [{ title: "Sub Task", url: "#" }],
+      title: "Hotel Management",
+      icon: RiHotelLine,
+      items: [
+        { title: "My Hotel", url: "/hotel/hotel-details" },
+        { title: "Hotel Features", url: "/hotel/hotel-features" },
+      ],
     },
     {
-      title: "Forms",
-      icon: LayoutGrid,
-      url: "#",
-      items: [{ title: "Sub Form", url: "#" }],
+      title: "Bookings",
+      icon: HiOutlineTicket,
+      items: [
+        { title: "New Booking", url: "/bookings/new-booking" },
+        { title: "All Bookings", url: "/bookings/all-bookings" },
+        { title: "SafariPro Bookings", url: "/bookings/safaripro-bookings" },
+      ],
     },
     {
-      title: "Tables",
-      icon: Table,
-      url: "#",
-      items: [{ title: "Sub Table", url: "#" }],
+      title: "Rooms",
+      icon: Bed,
+      items: [
+        { title: "New Room", url: "/rooms/new-room" },
+        { title: "Available Rooms", url: "/rooms/available-rooms" },
+        { title: "Booked Rooms", url: "/rooms/booked-rooms" },
+        { title: "Maintenance Rooms", url: "/rooms/maitenance-rooms" },
+        { title: "Room Types", url: "/rooms/room-types" },
+        {
+          title: "Available Rooms By Date",
+          url: "/rooms/available-rooms-by-date",
+        },
+        { title: "Allocate Rooms", url: "/rooms/allocate-rooms" },
+        { title: "Allocations", url: "/rooms/rooms-allocations" },
+      ],
     },
     {
-      title: "Pages",
-      icon: FileText,
-      url: "#",
-      items: [{ title: "Sub Page", url: "#" }],
+      title: "Reservations",
+      icon: FiUserCheck,
+      items: [
+        { title: "Check-in", url: "/reservations/checkin" },
+        { title: "Check-out", url: "/reservations/checkout" },
+      ],
+    },
+    {
+      title: "House Keeping",
+      icon: MdOutlineInventory2,
+      items: [
+        { title: "Inventory Items", url: "/house-keeping/inventory-items" },
+        { title: "Event Spaces", url: "/house-keeping/event-spaces" },
+      ],
+    },
+    {
+      title: "Billings & Payments",
+      icon: MdPayment,
+      items: [
+        { title: "Payouts", url: "/billings/payouts" },
+        { title: "Invoices", url: "/billings/invoices" },
+      ],
     },
   ],
+  // Support links that you wanted to keep
   supportLinks: [
-    { title: "Chat", icon: MessageSquare, url: "#" },
-    { title: "Support Ticket", icon: Ticket, url: "#", tag: "NEW" },
+    { title: "Analytics", icon: MessageSquare, url: "/analytics" },
     {
-      title: "Email",
-      icon: Mail,
-      url: "#",
-      items: [{ title: "Sub Email", url: "#" }],
+      title: "Reports",
+      icon: Ticket,
+      url: "/reports",
     },
-  ],
-  otherLinks: [
-    {
-      title: "Charts",
-      icon: PieChart,
-      url: "#",
-      items: [{ title: "Sub Chart", url: "#" }],
-    },
-    {
-      title: "UI Elements",
-      icon: Layers,
-      url: "#",
-      items: [{ title: "Sub Element", url: "#" }],
-    },
-    {
-      title: "Authentication",
-      icon: Lock,
-      url: "#",
-      items: [{ title: "Sub Auth", url: "#" }],
-    },
+    { title: "Support", icon: User, url: "/support" },
   ],
 };
