@@ -10,8 +10,7 @@ import Signup from "@/pages/authentication/signup";
 
 // Import the route protectors
 import { ProtectedRoute, PublicRoute } from "./protected-routes";
-import AvailableRooms from "@/pages/rooms/available-rooms";
-import HotelRooms from "@/pages/rooms/available-rooms";
+import HotelRooms from "@/pages/rooms/hotel-rooms";
 
 const RootLayout = () => {
   return (

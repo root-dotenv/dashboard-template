@@ -16,7 +16,6 @@ import {
 import {
   ChevronDownIcon,
   ChevronUpIcon,
-  CircleXIcon,
   Columns3Icon,
   EllipsisIcon,
   Eye,
@@ -131,14 +130,14 @@ interface HotelStatsData {
 
 // --- Constants ---
 const PRICE_RANGES = [
-  { label: "0 - 100", value: "0-100" },
-  { label: "100 - 200", value: "100-200" },
-  { label: "200 - 300", value: "200-300" },
-  { label: "300 - 400", value: "300-400" },
-  { label: "400 - 500", value: "400-500" },
-  { label: "500 - 600", value: "500-600" },
-  { label: "600 - 700", value: "600-700" },
-  { label: "700+", value: "700-99999" },
+  { label: "$ 0 - 100", value: "0-100" },
+  { label: "$ 100 - 200", value: "100-200" },
+  { label: "$ 200 - 300", value: "200-300" },
+  { label: "$ 300 - 400", value: "300-400" },
+  { label: "$ 400 - 500", value: "400-500" },
+  { label: "$ 500 - 600", value: "500-600" },
+  { label: "$ 600 - 700", value: "600-700" },
+  { label: "$ 700+", value: "700-99999" },
 ];
 
 const GUEST_CAPACITY_OPTIONS = [
@@ -428,7 +427,7 @@ export default function HotelRooms() {
       },
       {
         accessorKey: "code",
-        header: "Room Code", // Removed SortableHeader
+        header: "Room Code",
         cell: ({ row }) => (
           <div className="font-mono text-sm text-gray-700 font-medium">
             {row.original.code}
@@ -490,7 +489,7 @@ export default function HotelRooms() {
         accessorKey: "price_per_night",
         header: ({ column }) => (
           <div className="flex justify-end">
-            <SortableHeader column={column}>Price/Night</SortableHeader>
+            <SortableHeader column={column}>PRICE PER NIGHT</SortableHeader>
           </div>
         ),
         cell: ({ row }) => {
@@ -608,7 +607,24 @@ export default function HotelRooms() {
   if (isError) return <ErrorPage error={error as Error} onRetry={refetch} />;
 
   const isLoading = isLoadingRooms || isLoadingRoomTypes || isLoadingHotel;
-  const tabs = ["Available", "Booked", "Maintenance"];
+
+  const TABS_CONFIG = [
+    {
+      label: "Available",
+      icon: CheckCircle2,
+      color: "text-emerald-600",
+    },
+    {
+      label: "Booked",
+      icon: BookCheck,
+      color: "text-amber-600",
+    },
+    {
+      label: "Maintenance",
+      icon: Wrench,
+      color: "text-rose-600",
+    },
+  ];
 
   return (
     <div className="flex-1 space-y-6 bg-gray-50">
@@ -621,24 +637,37 @@ export default function HotelRooms() {
         </CardHeader>
         <CardContent className="px-6 py-4">
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-md shadow-2xs p-[6px] w-fit mb-6">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setStatusFilter(tab as typeof statusFilter)}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium rounded-md transition-all duration-200",
-                  statusFilter === tab
-                    ? "bg-blue-600 text-white shadow"
-                    : "bg-transparent shadow text-gray-600 hover:bg-blue-100 hover:text-blue-700"
-                )}
-              >
-                {tab} ({stats[tab.toLowerCase() as keyof typeof stats] ?? 0})
-              </button>
-            ))}
+            {TABS_CONFIG.map((tab) => {
+              const isActive = statusFilter === tab.label;
+              return (
+                <button
+                  key={tab.label}
+                  onClick={() =>
+                    setStatusFilter(tab.label as typeof statusFilter)
+                  }
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                    isActive
+                      ? "bg-blue-600 text-white shadow"
+                      : "bg-transparent shadow text-gray-600 hover:text-gray-600"
+                  )}
+                >
+                  {/* The icon is now rendered here */}
+                  <tab.icon
+                    className={cn(
+                      "h-5 w-5",
+                      isActive ? "text-white" : tab.color
+                    )}
+                  />
+                  {tab.label} (
+                  {stats[tab.label.toLowerCase() as keyof typeof stats] ?? 0})
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
@@ -649,14 +678,12 @@ export default function HotelRooms() {
                   className="pl-10 pr-10 w-full sm:w-80 bg-white border-gray-200 rounded-md shadow focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition-all"
                 />
                 {globalFilter && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  <span
+                    className="absolute hover:bg-none right-2 top-1/2 transform -translate-y-1/2 text-gray-600 "
                     onClick={() => setGlobalFilter("")}
                   >
-                    <CircleXIcon size={18} />
-                  </Button>
+                    <XIcon size={18} />
+                  </span>
                 )}
               </div>
               <Select
@@ -671,18 +698,21 @@ export default function HotelRooms() {
                     ?.setFilterValue(value === "all" ? "" : value)
                 }
               >
-                <SelectTrigger className="w-48 bg-white border-gray-200 rounded-md shadow focus:ring-2 focus:ring-blue-500">
+                <SelectTrigger className="w-36 bg-white border-gray-200 rounded-md shadow focus:ring-2 focus:ring-blue-500">
                   <SelectValue placeholder="Room Type" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 rounded-md shadow">
-                  <SelectItem value="all" className="hover:bg-blue-50">
+                <SelectContent className="bg-[#FFF] px-2 py-3 border-[1.5px] border-[#E4E7EC] rounded-xl shadow-sm">
+                  <SelectItem
+                    value="all"
+                    className="hover:bg-blue-100 text-[#1D2939] uppercase text-[13px] font-semibold"
+                  >
                     All Room Types
                   </SelectItem>
                   {roomTypesData?.map((rt) => (
                     <SelectItem
                       key={rt.id}
                       value={rt.id}
-                      className="hover:bg-blue-100"
+                      className="hover:bg-blue-50 text-[#1D2939] uppercase text-[13px] font-semibold"
                     >
                       {rt.name}
                     </SelectItem>
@@ -701,18 +731,21 @@ export default function HotelRooms() {
                     ?.setFilterValue(value === "all" ? "" : value)
                 }
               >
-                <SelectTrigger className="w-48 bg-white border-gray-200 rounded-md shadow focus:ring-2 focus:ring-blue-500">
+                <SelectTrigger className="w-36 bg-white border-gray-200 rounded-md shadow focus:ring-2 focus:ring-blue-500">
                   <SelectValue placeholder="Capacity" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 rounded-md shadow">
-                  <SelectItem value="all" className="hover:bg-blue-100">
+                <SelectContent className="bg-[#FFF] px-2 py-3 border-[1.5px] border-[#E4E7EC] rounded-xl shadow-sm">
+                  <SelectItem
+                    value="all"
+                    className="hover:bg-blue-100 text-[#1D2939] uppercase text-[13px] font-semibold"
+                  >
                     All Capacities
                   </SelectItem>
                   {GUEST_CAPACITY_OPTIONS.map((opt) => (
                     <SelectItem
                       key={opt.value}
                       value={opt.value}
-                      className="hover:bg-indigo-50"
+                      className="hover:bg-blue-50 text-[#1D2939] uppercase text-[13px] font-semibold"
                     >
                       {opt.label}
                     </SelectItem>
@@ -723,15 +756,15 @@ export default function HotelRooms() {
                 value={priceRangeFilter}
                 onValueChange={setPriceRangeFilter}
               >
-                <SelectTrigger className="w-48 bg-white border-gray-200 rounded-md shadow focus:ring-2 focus:ring-blue-500">
-                  <SelectValue placeholder="Price Range" />
+                <SelectTrigger className="w-40 bg-white border-gray-200 rounded-md shadow focus:ring-2 focus:ring-blue-500">
+                  <SelectValue placeholder="Price Range (USD)" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 rounded-md shadow">
+                <SelectContent className="bg-[#FFF] px-2 py-3 border-[1.5px] border-[#E4E7EC] rounded-xl shadow-sm">
                   {PRICE_RANGES.map((range) => (
                     <SelectItem
                       key={range.value}
                       value={range.value}
-                      className="hover:bg-blue-100"
+                      className="hover:bg-blue-100 text-[#1D2939] uppercase text-[13px] font-semibold"
                     >
                       {range.label}
                     </SelectItem>
@@ -879,19 +912,18 @@ export default function HotelRooms() {
                   </button>
                 </Badge>
               ))}
-              <Button
-                variant="ghost"
-                className="text-blue-600 hover:text-blue-800 h-auto p-1.5"
+              <span
+                className="text-blue-600 block text-sm font-medium cursor-pointer hover:text-blue-700 h-auto p-1.5"
                 onClick={clearFilters}
               >
                 Clear All
-              </Button>
+              </span>
             </div>
           )}
 
           <div className="rounded-lg border border-gray-200 shadow-sm bg-white overflow-hidden">
             <Table>
-              <TableHeader className="bg-indigo-50/30">
+              <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow
                     key={headerGroup.id}
@@ -901,7 +933,7 @@ export default function HotelRooms() {
                       <TableHead
                         key={header.id}
                         style={{ width: `${header.getSize()}px` }}
-                        className="h-14 px-6 text-left align-middle font-semibold text-gray-900 border-r border-gray-200 last:border-r-0"
+                        className="h-14 px-6 text-left align-middle font-semibold text-[13px] uppercase tracking-wide text-[#667085] border-r border-gray-300 last:border-r-0 bg-gradient-to-b from-slate-50 to-slate-100 shadow-sm"
                       >
                         {header.isPlaceholder
                           ? null
@@ -1024,21 +1056,32 @@ const SortableHeader = ({
   column: any;
   children: React.ReactNode;
   className?: string;
-}) => (
-  <div
-    className={cn(
-      "flex items-center gap-2 cursor-pointer select-none text-gray-900 font-semibold",
-      className
-    )}
-    onClick={column.getToggleSortingHandler()}
-  >
-    {children}
-    {{
-      asc: <ChevronUpIcon size={18} className="text-indigo-600" />,
-      desc: <ChevronDownIcon size={18} className="text-indigo-600" />,
-    }[column.getIsSorted() as string] ?? null}
-  </div>
-);
+}) => {
+  const isSorted = column.getIsSorted();
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 cursor-pointer select-none",
+        className
+      )}
+      onClick={column.getToggleSortingHandler()}
+    >
+      {children}
+      {/* New Icon Logic */}
+      {isSorted === "desc" ? (
+        <ChevronDownIcon size={16} className="text-[#1D2939]" />
+      ) : (
+        <ChevronUpIcon
+          size={16}
+          className={cn(
+            isSorted === "asc" ? "text-[#1D2939]" : "text-gray-600"
+          )}
+        />
+      )}
+    </div>
+  );
+};
 
 function RowActions({
   row,
