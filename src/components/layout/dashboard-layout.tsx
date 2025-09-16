@@ -6,12 +6,12 @@ import { Outlet } from "react-router-dom";
 export default function DashboardLayout() {
   return (
     // Updated dark mode styles for the main wrapper
-    <div className="flex min-h-screen w-full bg-white dark:bg-[#101828]">
+    <div className="flex h-screen w-full bg-white dark:bg-[#101828]">
       <AppSidebar />
       {/* Updated dark mode styles for the content area */}
-      <div className="flex flex-1 flex-col bg-[#F9FAFB] dark:bg-[#101828]">
+      <div className="flex flex-1 flex-col bg-[#FFF] dark:bg-[#101828]">
         <TopNavigationBar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-0 md:p-0">
           <Outlet />
         </main>
       </div>

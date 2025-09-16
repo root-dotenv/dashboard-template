@@ -1,10 +1,9 @@
 // src/components/layout/top-navigation-bar.tsx
-import { Search, Moon, Sun, ChevronDown, BellIcon } from "lucide-react";
+import { Search, ChevronDown, BellIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Notifications } from "@/components/custom/notifications";
 import { navData } from "@/lib/nav-data";
 import { useSidebarStore } from "@/store/sidebar-store";
-import { useTheme } from "@/providers/theme-provider";
 import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 import { BiCog } from "react-icons/bi";
 import { Separator } from "@/components/ui/separator";
@@ -15,10 +14,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserMenuItems } from "./user-menu-items";
+import { ThemeToggle } from "../custom/theme-toggle";
 
 export function TopNavigationBar() {
   const { toggleSidebar } = useSidebarStore();
-  const { theme, setTheme } = useTheme();
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-[#FFF] px-4 md:px-6 dark:bg-[#101828] dark:border-[#1D2939]">
@@ -39,19 +38,8 @@ export function TopNavigationBar() {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#E4E7EC] bg-white text-gray-700 hover:bg-gray-50 dark:bg-[#171F2F] dark:border-[#1D2939] dark:text-[#D0D5DD] dark:hover:bg-[#1C2433]"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-          <span className="sr-only">Toggle Theme</span>
-        </Button>
+        {/* --- NEW Theme Toggle Switch --- */}
+        <ThemeToggle />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -52,8 +52,8 @@ const NavItem = ({
             "flex w-full items-center rounded-lg p-2 transition-colors duration-200",
             isCollapsed ? "justify-center" : "justify-between",
             isActive
-              ? "bg-blue-50 text-blue-700 dark:bg-[#162142]" // Active state
-              : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433]" // Inactive state
+              ? "bg-blue-50 text-blue-700 dark:bg-[#162142]"
+              : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433]"
           )}
         >
           <div className="flex items-center gap-3">
