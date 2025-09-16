@@ -42,9 +42,7 @@ export const navData = {
       icon: Bed,
       items: [
         { title: "New Room", url: "/rooms/new-room" },
-        { title: "Available Rooms", url: "/rooms/available-rooms" },
-        { title: "Booked Rooms", url: "/rooms/booked-rooms" },
-        { title: "Maintenance Rooms", url: "/rooms/maitenance-rooms" },
+        { title: "Hotel Rooms", url: "/rooms/hotel-rooms" },
         { title: "Room Types", url: "/rooms/room-types" },
         {
           title: "Available Rooms By Date",

@@ -11,6 +11,7 @@ import Signup from "@/pages/authentication/signup";
 // Import the route protectors
 import { ProtectedRoute, PublicRoute } from "./protected-routes";
 import AvailableRooms from "@/pages/rooms/available-rooms";
+import HotelRooms from "@/pages/rooms/available-rooms";
 
 const RootLayout = () => {
   return (
@@ -45,7 +46,7 @@ export const router = createBrowserRouter([
               { index: true, element: <MainHomePage /> },
               { path: "profile", element: <PlaceholderPage /> },
               { path: "hotel/hotel-details", element: <PlaceholderPage /> },
-              { path: "rooms/available-rooms", element: <AvailableRooms /> },
+              { path: "rooms/hotel-rooms", element: <HotelRooms /> },
             ],
           },
         ],

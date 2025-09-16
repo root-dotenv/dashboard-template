@@ -22,7 +22,17 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         //  - - - custom themed "button variant"
         main: "bg-[#465FFF] hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-[6px] border-none text-[0.9375rem] cursor-pointer",
+        //  - - - available custom themed "button variant"
+        available:
+          "bg-[#039855] hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
+        //  - - - booked custom themed "button variant"
+        booked:
+          "bg-yellow-600 hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
+        //  - - - maintenance custom themed "button variant"
+        maintenance:
+          "bg-red-500 hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
       },
+
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",

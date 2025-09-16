@@ -34,6 +34,8 @@
 //   Loader,
 //   BookCheck,
 //   Wrench,
+//   MoreVertical,
+//   PlusCircle,
 // } from "lucide-react";
 // import Papa from "papaparse";
 // import { toast } from "sonner";
@@ -81,6 +83,7 @@
 // import { TbFileTypeCsv } from "react-icons/tb";
 // import ErrorPage from "@/components/custom/error-page";
 // import hotelClient from "@/api/hotel-client";
+// import { formatNumberWithOrdinal } from "@/utils/utils";
 
 // // --- Type Definitions ---
 // interface Room {
@@ -91,6 +94,7 @@
 //   availability_status: "Available" | "Booked" | "Maintenance";
 //   floor_number: number;
 //   room_type: string;
+//   max_occupancy: number;
 // }
 
 // interface RoomType {
@@ -104,6 +108,19 @@
 //   next: string | null;
 //   previous: string | null;
 //   results: Room[];
+// }
+
+// interface HotelStatsData {
+//   summary_counts: {
+//     rooms: number;
+//   };
+//   availability_stats: {
+//     status_counts: {
+//       Available: number;
+//       Booked: number;
+//       Maintenance: number;
+//     };
+//   };
 // }
 
 // // --- Debounce Hook ---
@@ -196,6 +213,13 @@
 //     staleTime: Infinity,
 //   });
 
+//   const { data: hotelData, isLoading: isLoadingHotel } =
+//     useQuery<HotelStatsData>({
+//       queryKey: ["hotelDetails", hotelId],
+//       queryFn: async () => (await hotelClient.get(`/hotels/${hotelId}/`)).data,
+//       enabled: !!hotelId,
+//     });
+
 //   const roomTypesMap = useMemo(() => {
 //     if (!roomTypesData) return new Map<string, RoomType>();
 //     return new Map(roomTypesData.map((rt) => [rt.id, rt]));
@@ -215,6 +239,13 @@
 //       );
 //     },
 //   });
+
+//   const stats = {
+//     total: hotelData?.summary_counts?.rooms ?? 0,
+//     available: hotelData?.availability_stats?.status_counts?.Available ?? 0,
+//     booked: hotelData?.availability_stats?.status_counts?.Booked ?? 0,
+//     maintenance: hotelData?.availability_stats?.status_counts?.Maintenance ?? 0,
+//   };
 
 //   const roomsForCurrentPage = paginatedResponse?.results ?? [];
 //   const totalRoomsCount = paginatedResponse?.count ?? 0;
@@ -281,106 +312,155 @@
 //       {
 //         id: "select",
 //         header: ({ table }) => (
-//           <Checkbox
-//             checked={
-//               table.getIsAllPageRowsSelected() ||
-//               (table.getIsSomePageRowsSelected() && "indeterminate")
-//             }
-//             onCheckedChange={(value) =>
-//               table.toggleAllPageRowsSelected(!!value)
-//             }
-//             aria-label="Select all"
-//             className="border-[#DADCE0]"
-//           />
+//           <div className="flex items-center justify-center">
+//             <Checkbox
+//               checked={
+//                 table.getIsAllPageRowsSelected() ||
+//                 (table.getIsSomePageRowsSelected() && "indeterminate")
+//               }
+//               onCheckedChange={(value) =>
+//                 table.toggleAllPageRowsSelected(!!value)
+//               }
+//               aria-label="Select all"
+//               className="border-[#DADCE0] block mr-5"
+//             />
+//           </div>
 //         ),
 //         cell: ({ row }) => (
-//           <Checkbox
-//             checked={row.getIsSelected()}
-//             onCheckedChange={(value) => row.toggleSelected(!!value)}
-//             aria-label="Select row"
-//             className="border-[#DADCE0]"
-//           />
+//           <div className="w-full flex items-center justify-center">
+//             <Checkbox
+//               checked={row.getIsSelected()}
+//               onCheckedChange={(value) => row.toggleSelected(!!value)}
+//               aria-label="Select row"
+//               className="border-[#DADCE0] block mr-5"
+//             />
+//           </div>
 //         ),
-//         size: 40,
+//         size: 50,
 //         enableSorting: false,
 //         enableHiding: false,
 //       },
 //       {
 //         accessorKey: "code",
 //         header: ({ column }) => (
-//           <SortableHeader column={column}>Room Code</SortableHeader>
+//           <div className="flex items-center">
+//             <SortableHeader column={column}>Room Code</SortableHeader>
+//           </div>
 //         ),
 //         cell: ({ row }) => (
-//           <div className="font-mono text-sm">{row.original.code}</div>
+//           <div className="font-mono text-sm flex items-center">
+//             {row.original.code}
+//           </div>
 //         ),
 //         size: 160,
 //       },
 //       {
 //         accessorKey: "room_type",
-//         header: "Room Type",
+//         header: () => <div className="flex items-center">Room Type</div>,
 //         cell: ({ row }) => {
 //           const roomType = roomTypesMap.get(row.original.room_type);
-//           return roomType ? (
-//             <Badge className="rounded-full px-3 py-1 bg-[#E2EEFE] border border-blue-200 text-[#1547E5] hover:bg-[#EDF1F4]">
-//               {roomType.name}
-//             </Badge>
-//           ) : (
-//             "..."
+//           return (
+//             <div className="flex items-center">
+//               {roomType ? (
+//                 <Badge className="rounded-full px-3 py-1 bg-[#F5F5F5] text-[#595d66] hover:bg-[#EDF1F4]">
+//                   {roomType.name}
+//                 </Badge>
+//               ) : (
+//                 <span>...</span>
+//               )}
+//             </div>
 //           );
 //         },
 //         size: 220,
 //       },
 //       {
 //         id: "bed_type",
-//         header: "Bed Type",
+//         header: () => <div className="flex items-center">Bed Type</div>,
 //         cell: ({ row }) => {
 //           const roomType = roomTypesMap.get(row.original.room_type);
-//           return roomType ? <span>{roomType.bed_type}</span> : "...";
+//           return (
+//             <div className="flex items-center">
+//               {roomType ? (
+//                 <span>{roomType.bed_type} Bed</span>
+//               ) : (
+//                 <span>...</span>
+//               )}
+//             </div>
+//           );
 //         },
-//         size: 150,
+//         size: 180,
+//       },
+//       {
+//         accessorKey: "max_occupancy",
+//         header: () => <div className="flex items-center">Capacity</div>,
+//         cell: ({ row }) => (
+//           <div className="flex items-center">
+//             <span>{`${row.original.max_occupancy} Guests`}</span>
+//           </div>
+//         ),
+//         size: 120,
 //       },
 //       {
 //         accessorKey: "floor_number",
-//         header: "Floor",
-//         cell: ({ row }) => <span>{row.original.floor_number}</span>,
-//         size: 100,
+//         header: () => <div className="flex items-center">Floor</div>,
+//         cell: ({ row }) => (
+//           <div className="flex items-center">
+//             <span>
+//               {formatNumberWithOrdinal(row.original.floor_number)} Floor
+//             </span>
+//           </div>
+//         ),
+//         size: 120,
 //       },
 //       {
 //         accessorKey: "price_per_night",
 //         header: ({ column }) => (
-//           <SortableHeader column={column} className="justify-end">
-//             Price/Night
-//           </SortableHeader>
+//           <div className="flex items-center justify-end">
+//             <SortableHeader column={column} className="justify-end">
+//               Price/Night
+//             </SortableHeader>
+//           </div>
 //         ),
 //         cell: ({ row }) => {
 //           const formatted = new Intl.NumberFormat("en-US", {
 //             style: "currency",
 //             currency: "USD",
 //           }).format(row.original.price_per_night);
-//           return <div className="text-right font-medium">{formatted}</div>;
+//           return (
+//             <div className="text-right font-medium flex items-center justify-end">
+//               {formatted}
+//             </div>
+//           );
 //         },
 //         size: 180,
 //       },
 //       {
 //         accessorKey: "availability_status",
-//         header: "Status",
+//         header: () => <div className="flex items-center">Status</div>,
 //         cell: ({ row }) => (
-//           <Badge
-//             className={cn(
-//               getAvailabilityColor(row.getValue("availability_status"))
-//             )}
-//           >
-//             {row.getValue("availability_status")}
-//           </Badge>
+//           <div className="flex items-center">
+//             <Badge
+//               className={cn(
+//                 getAvailabilityColor(row.getValue("availability_status"))
+//               )}
+//             >
+//               {row.getValue("availability_status")}
+//             </Badge>
+//           </div>
 //         ),
-//         size: 140,
+//         size: 160,
 //       },
 //       {
 //         id: "actions",
-//         cell: ({ row }) => (
-//           <RowActions row={row} deleteRoomMutation={deleteRoomMutation} />
+//         header: () => (
+//           <div className="flex items-center justify-center">Actions</div>
 //         ),
-//         size: 60,
+//         cell: ({ row }) => (
+//           <div className="flex items-center justify-center">
+//             <RowActions row={row} deleteRoomMutation={deleteRoomMutation} />
+//           </div>
+//         ),
+//         size: 80,
 //         enableHiding: false,
 //       },
 //     ],
@@ -413,25 +493,19 @@
 
 //   if (isError) return <ErrorPage error={error as Error} onRetry={refetch} />;
 
-//   const isLoading = isLoadingRooms || isLoadingRoomTypes;
+//   const isLoading = isLoadingRooms || isLoadingRoomTypes || isLoadingHotel;
 
 //   return (
-//     <div className="flex-1 space-y-4 md:p-4 pt-4 ">
-//       <div className="flex items-center justify-between px-4">
-//         <h2 className="text-3xl font-bold tracking-tight">Available Rooms</h2>
-//       </div>
-//       <Card className="bg-none p-0 border-none shadow-none">
+//     <div className="flex-1 space-y-4">
+//       <Card className="py-10 px-4 bg-[#FFF] rounded-none">
+//         <div className="flex items-center justify-between px-4 mb-4">
+//           <h2 className="text-3xl font-bold tracking-tight">Available Rooms</h2>
+//         </div>
+//         {/* StatCards */}
+
+//         {/* - - - -  */}
 //         <CardHeader>
 //           <CardDescription>
-//             <Badge
-//               className="px-4 py-1 block mb-3 rounded-full bg-[#FFF] border-[#DADCE0] dark:text-[#0A0A0A]"
-//               variant={"outline"}
-//             >
-//               Total Available Rooms:{" "}
-//               <span className="font-bold text-gray-700 ml-1">
-//                 {totalRoomsCount}
-//               </span>
-//             </Badge>
 //             A list of all currently available rooms.
 //           </CardDescription>
 //         </CardHeader>
@@ -486,19 +560,6 @@
 //                   </AlertDialogContent>
 //                 </AlertDialog>
 //               )}
-//               <Button
-//                 variant="outline"
-//                 onClick={handleExport}
-//                 disabled={isExporting}
-//                 className="gap-1 bg-[#0EB981] text-[#FFF] border-none hover:bg-[#04966A] hover:text-[#FFF] cursor-pointer shadow"
-//               >
-//                 {isExporting ? (
-//                   <Loader2 className="h-4 w-4 animate-spin" />
-//                 ) : (
-//                   <TbFileTypeCsv className="h-4 w-4" />
-//                 )}
-//                 {isExporting ? "Exporting..." : "Export to CSV"}
-//               </Button>
 //               <DropdownMenu>
 //                 <DropdownMenuTrigger asChild>
 //                   <Button variant="outline" className="gap-1 cursor-pointer">
@@ -533,11 +594,46 @@
 //                 />{" "}
 //                 Refresh
 //               </Button>
+//               <DropdownMenu>
+//                 <DropdownMenuTrigger asChild>
+//                   <Button
+//                     variant="outline"
+//                     size="icon"
+//                     className="h-10 w-10 rounded-full border"
+//                   >
+//                     <MoreVertical className="h-4 w-4" />
+//                     <span className="sr-only">More options</span>
+//                   </Button>
+//                 </DropdownMenuTrigger>
+//                 <DropdownMenuContent align="end">
+//                   <DropdownMenuItem
+//                     onClick={handleExport}
+//                     disabled={isExporting}
+//                     className="gap-2"
+//                   >
+//                     {isExporting ? (
+//                       <Loader2 className="h-4 w-4 animate-spin" />
+//                     ) : (
+//                       <TbFileTypeCsv className="h-4 w-4 text-emerald-600" />
+//                     )}
+//                     <span>
+//                       {isExporting ? "Exporting..." : "Export to CSV"}
+//                     </span>
+//                   </DropdownMenuItem>
+//                   <DropdownMenuItem
+//                     onClick={() => navigate("/rooms/new-room")}
+//                     className="gap-2"
+//                   >
+//                     <PlusCircle className="h-4 w-4 text-blue-500" />
+//                     <span>Create New Room</span>
+//                   </DropdownMenuItem>
+//                 </DropdownMenuContent>
+//               </DropdownMenu>
 //             </div>
 //           </div>
-//           <div className="rounded-md border">
+//           <div className="rounded-md border shadow-sm">
 //             <Table>
-//               <TableHeader>
+//               <TableHeader className="bg-gray-50">
 //                 {table.getHeaderGroups().map((headerGroup) => (
 //                   <TableRow
 //                     key={headerGroup.id}
@@ -547,7 +643,7 @@
 //                       <TableHead
 //                         key={header.id}
 //                         style={{ width: `${header.getSize()}px` }}
-//                         className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
+//                         className="h-14 px-6 text-left align-middle font-medium text-muted-foreground border-r border-gray-100 last:border-r-0"
 //                       >
 //                         {header.isPlaceholder
 //                           ? null
@@ -577,12 +673,13 @@
 //                     <TableRow
 //                       key={row.id}
 //                       data-state={row.getIsSelected() && "selected"}
-//                       className="border-b border-gray-200"
+//                       className="border-b border-gray-200 hover:bg-gray-50/50"
 //                     >
 //                       {row.getVisibleCells().map((cell) => (
 //                         <TableCell
 //                           key={cell.id}
-//                           className="px-4 py-3 align-middle"
+//                           className="px-6 py-4 align-middle border-r border-gray-100 last:border-r-0"
+//                           style={{ minHeight: "60px" }}
 //                         >
 //                           {flexRender(
 //                             cell.column.columnDef.cell,
@@ -718,7 +815,7 @@
 //   return (
 //     <DropdownMenu>
 //       <DropdownMenuTrigger asChild>
-//         <div className="flex justify-end">
+//         <div className="flex justify-center">
 //           <Button
 //             size="icon"
 //             variant="ghost"
@@ -790,8 +887,6 @@
 //   );
 // }
 
-// src/pages/rooms/available-rooms.tsx
-// src/pages/rooms/available-rooms.tsx
 "use client";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -829,6 +924,10 @@ import {
   Wrench,
   MoreVertical,
   PlusCircle,
+  CheckCircle2,
+  BedDouble,
+  Building,
+  ArrowDownUp,
 } from "lucide-react";
 import Papa from "papaparse";
 import { toast } from "sonner";
@@ -849,6 +948,13 @@ import {
   CardHeader,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -942,12 +1048,15 @@ const getAvailabilityColor = (status: string) => {
 };
 
 // --- Main Component ---
-export default function AvailableRooms() {
+export default function HotelRooms() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hotelId = "a3d5501e-c910-4e2e-a0b2-ad616c5910db";
 
   // --- State ---
+  const [statusFilter, setStatusFilter] = useState<
+    "Available" | "Booked" | "Maintenance"
+  >("Available");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -969,8 +1078,9 @@ export default function AvailableRooms() {
     isRefetching,
   } = useQuery<PaginatedRoomsResponse>({
     queryKey: [
-      "available-rooms",
+      "rooms",
       hotelId,
+      statusFilter,
       pagination.pageIndex,
       debouncedGlobalFilter,
       sorting,
@@ -979,17 +1089,24 @@ export default function AvailableRooms() {
     queryFn: async () => {
       const params = new URLSearchParams({
         hotel_id: hotelId!,
-        availability_status: "Available",
+        availability_status: statusFilter,
         page: String(pagination.pageIndex + 1),
         page_size: String(pagination.pageSize),
       });
 
       if (debouncedGlobalFilter) params.append("search", debouncedGlobalFilter);
+
       if (sorting.length > 0) {
         const sortKey = sorting[0].id;
         const sortDir = sorting[0].desc ? "-" : "";
         params.append("ordering", `${sortDir}${sortKey}`);
       }
+
+      columnFilters.forEach((filter) => {
+        if (filter.value) {
+          params.append(filter.id, String(filter.value));
+        }
+      });
 
       const response = await hotelClient.get(`/rooms/`, { params });
       return response.data;
@@ -1022,7 +1139,8 @@ export default function AvailableRooms() {
     mutationFn: (roomId: string) => hotelClient.delete(`rooms/${roomId}/`),
     onSuccess: () => {
       toast.success("Room deleted successfully!");
-      queryClient.invalidateQueries({ queryKey: ["available-rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["hotelDetails"] });
     },
     onError: (error: any) => {
       toast.error(
@@ -1050,15 +1168,15 @@ export default function AvailableRooms() {
 
   const handleExport = useCallback(async () => {
     if (!totalRoomsCount) {
-      toast.info("No rooms to export.");
+      toast.info(`No ${statusFilter.toLowerCase()} rooms to export.`);
       return;
     }
     setIsExporting(true);
-    toast.info("Exporting all available rooms, please wait...");
+    toast.info(`Exporting all ${statusFilter.toLowerCase()} rooms...`);
     try {
       const params = new URLSearchParams({
         hotel_id: hotelId!,
-        availability_status: "Available",
+        availability_status: statusFilter,
         page_size: String(totalRoomsCount),
       });
       if (debouncedGlobalFilter) params.append("search", debouncedGlobalFilter);
@@ -1068,6 +1186,11 @@ export default function AvailableRooms() {
           `${sorting[0].desc ? "-" : ""}${sorting[0].id}`
         );
       }
+      columnFilters.forEach((filter) => {
+        if (filter.value) {
+          params.append(filter.id, String(filter.value));
+        }
+      });
       const response = await hotelClient.get<PaginatedRoomsResponse>(
         "/rooms/",
         { params }
@@ -1087,7 +1210,9 @@ export default function AvailableRooms() {
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `available_rooms_${new Date().toISOString().split("T")[0]}.csv`
+        `${statusFilter.toLowerCase()}_rooms_${
+          new Date().toISOString().split("T")[0]
+        }.csv`
       );
       document.body.appendChild(link);
       link.click();
@@ -1098,7 +1223,15 @@ export default function AvailableRooms() {
     } finally {
       setIsExporting(false);
     }
-  }, [hotelId, totalRoomsCount, debouncedGlobalFilter, sorting, roomTypesMap]);
+  }, [
+    hotelId,
+    totalRoomsCount,
+    debouncedGlobalFilter,
+    sorting,
+    roomTypesMap,
+    statusFilter,
+    columnFilters,
+  ]);
 
   const columns = useMemo<ColumnDef<Room>[]>(
     () => [
@@ -1287,32 +1420,50 @@ export default function AvailableRooms() {
   if (isError) return <ErrorPage error={error as Error} onRetry={refetch} />;
 
   const isLoading = isLoadingRooms || isLoadingRoomTypes || isLoadingHotel;
+  const tabs = ["Available", "Booked", "Maintenance"];
 
   return (
     <div className="flex-1 space-y-4">
       <Card className="py-10 px-4 bg-[#FFF] rounded-none">
         <div className="flex items-center justify-between px-4 mb-4">
-          <h2 className="text-3xl font-bold tracking-tight">Available Rooms</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Hotel Rooms</h2>
         </div>
-        {/* StatCards */}
 
-        {/* - - - -  */}
         <CardHeader>
-          <CardDescription>
-            A list of all currently available rooms.
+          <CardDescription className="text-[1rem]">
+            A list of all {statusFilter.toLowerCase()} rooms.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+            <div className="p-1 flex items-center gap-2 bg-[#F9FAFB] border border-[#E4E7EC] shadow-xs rounded-lg">
+              {tabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setStatusFilter(tab as typeof statusFilter)}
+                  className={cn(
+                    "px-4 py-1.5 text-sm font-medium rounded-md transition-colors",
+                    statusFilter === tab
+                      ? "bg-[#FFF] text-gray-900 shadow-sm"
+                      : "bg-transparent text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  {tab} ({stats[tab.toLowerCase() as keyof typeof stats] ?? 0})
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   ref={inputRef}
-                  placeholder="Search by code, description..."
+                  placeholder="Search by code..."
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
-                  className="pl-8 sm:w-[300px]"
+                  className="pl-8 sm:w-[250px] lg:w-[300px]"
                 />
                 {globalFilter && (
                   <Button
@@ -1325,6 +1476,79 @@ export default function AvailableRooms() {
                   </Button>
                 )}
               </div>
+              <Select
+                value={
+                  (table.getColumn("room_type")?.getFilterValue() as string) ??
+                  ""
+                }
+                onValueChange={(value) => {
+                  table
+                    .getColumn("room_type")
+                    ?.setFilterValue(value === "all" ? "" : value);
+                }}
+              >
+                <SelectTrigger className="w-fit">
+                  <SelectValue placeholder="Room Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Room Types</SelectItem>
+                  {roomTypesData?.map((rt) => (
+                    <SelectItem key={rt.id} value={rt.id}>
+                      {rt.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={
+                  (table
+                    .getColumn("floor_number")
+                    ?.getFilterValue() as string) ?? ""
+                }
+                onValueChange={(value) => {
+                  table
+                    .getColumn("floor_number")
+                    ?.setFilterValue(value === "all" ? "" : value);
+                }}
+              >
+                <SelectTrigger className="w-fit">
+                  <SelectValue placeholder="Floors" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Floors</SelectItem>
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map((floor) => (
+                    <SelectItem key={floor} value={String(floor)}>
+                      {formatNumberWithOrdinal(floor)} Floor
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={
+                  sorting.find((s) => s.id === "price_per_night")
+                    ? sorting[0].desc
+                      ? "desc"
+                      : "asc"
+                    : ""
+                }
+                onValueChange={(value) => {
+                  if (value) {
+                    setSorting([
+                      { id: "price_per_night", desc: value === "desc" },
+                    ]);
+                  } else {
+                    setSorting([]);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-fit">
+                  <SelectValue placeholder="Sort by Price" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asc">Price: Low to High</SelectItem>
+                  <SelectItem value="desc">Price: High to Low</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-3">
               {table.getSelectedRowModel().rows.length > 0 && (
@@ -1424,6 +1648,7 @@ export default function AvailableRooms() {
               </DropdownMenu>
             </div>
           </div>
+
           <div className="rounded-md border shadow-sm">
             <Table>
               <TableHeader className="bg-gray-50">
@@ -1488,7 +1713,7 @@ export default function AvailableRooms() {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      No available rooms found.
+                      No {statusFilter.toLowerCase()} rooms found.
                     </TableCell>
                   </TableRow>
                 )}
@@ -1547,7 +1772,8 @@ export default function AvailableRooms() {
   );
 }
 
-// Reusable component for sortable headers
+// --- Reusable Sub-components ---
+
 const SortableHeader = ({
   column,
   children,
@@ -1581,20 +1807,21 @@ function RowActions({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const roomStatus = row.original.availability_status;
+
   const updateStatusMutation = useMutation({
     mutationFn: ({
       roomId,
       status,
     }: {
       roomId: string;
-      status: "Booked" | "Maintenance";
+      status: "Available" | "Booked" | "Maintenance";
     }) =>
       hotelClient.patch(`/rooms/${roomId}/`, { availability_status: status }),
-    onSuccess: () => {
-      toast.success("Room status updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["available-rooms"] });
-      queryClient.invalidateQueries({ queryKey: ["booked-rooms"] });
-      queryClient.invalidateQueries({ queryKey: ["maintenance-rooms"] });
+    onSuccess: (_, variables) => {
+      toast.success(`Room marked as ${variables.status}!`);
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["hotelDetails"] });
     },
     onError: (error: any) => {
       toast.error(
@@ -1625,28 +1852,45 @@ function RowActions({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={() =>
-              updateStatusMutation.mutate({
-                roomId: row.original.id,
-                status: "Booked",
-              })
-            }
-          >
-            <BookCheck className="mr-2 h-4 w-4" />
-            <span>Mark as Booked</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() =>
-              updateStatusMutation.mutate({
-                roomId: row.original.id,
-                status: "Maintenance",
-              })
-            }
-          >
-            <Wrench className="mr-2 h-4 w-4" />
-            <span>Mark as Maintenance</span>
-          </DropdownMenuItem>
+          {roomStatus !== "Available" && (
+            <DropdownMenuItem
+              onClick={() =>
+                updateStatusMutation.mutate({
+                  roomId: row.original.id,
+                  status: "Available",
+                })
+              }
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              <span>Mark as Available</span>
+            </DropdownMenuItem>
+          )}
+          {roomStatus !== "Booked" && (
+            <DropdownMenuItem
+              onClick={() =>
+                updateStatusMutation.mutate({
+                  roomId: row.original.id,
+                  status: "Booked",
+                })
+              }
+            >
+              <BookCheck className="mr-2 h-4 w-4" />
+              <span>Mark as Booked</span>
+            </DropdownMenuItem>
+          )}
+          {roomStatus !== "Maintenance" && (
+            <DropdownMenuItem
+              onClick={() =>
+                updateStatusMutation.mutate({
+                  roomId: row.original.id,
+                  status: "Maintenance",
+                })
+              }
+            >
+              <Wrench className="mr-2 h-4 w-4" />
+              <span>Mark as Maintenance</span>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <AlertDialog>

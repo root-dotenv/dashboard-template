@@ -1,0 +1,466 @@
+{
+  "rooms": {
+    "count": 21,
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+        "code": "EXEC-401",
+        "description": "Spacious executive suite with a panoramic city view and a king-sized bed.",
+        "price_per_night": 350.75,
+        "availability_status": "Available",
+        "floor_number": 4,
+        "room_type": "rt-exec-suite-king",
+        "max_occupancy": 2
+      },
+      {
+        "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
+        "code": "DLX-305",
+        "description": "Deluxe room with two queen beds, ideal for families or groups.",
+        "price_per_night": 220.0,
+        "availability_status": "Available",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 4
+      },
+      {
+        "id": "c3d4e5f6-a7b8-9012-3456-7890abcdef12",
+        "code": "STD-210",
+        "description": "Cozy standard room with a comfortable single bed, perfect for solo travelers.",
+        "price_per_night": 125.5,
+        "availability_status": "Available",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "d4e5f6a7-b8c9-0123-4567-890abcdef123",
+        "code": "DLX-306",
+        "description": "Elegant deluxe room with a stunning sea view and a queen bed.",
+        "price_per_night": 235.0,
+        "availability_status": "Available",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 2
+      },
+      {
+        "id": "e5f6a7b8-c9d0-1234-5678-90abcdef1234",
+        "code": "STD-212",
+        "description": "A quiet and comfortable standard room facing the inner courtyard.",
+        "price_per_night": 130.0,
+        "availability_status": "Available",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345",
+        "code": "PRES-501",
+        "description": "The presidential suite offers unparalleled luxury, space, and amenities.",
+        "price_per_night": 850.0,
+        "availability_status": "Available",
+        "floor_number": 5,
+        "room_type": "rt-presidential-suite",
+        "max_occupancy": 4
+      },
+      {
+        "id": "a7b8c9d0-e1f2-3456-7890-bcdef1234567",
+        "code": "EXEC-402",
+        "description": "Modern executive suite with a dedicated workspace and premium services.",
+        "price_per_night": 375.0,
+        "availability_status": "Available",
+        "floor_number": 4,
+        "room_type": "rt-exec-suite-king",
+        "max_occupancy": 2
+      },
+      {
+        "id": "b8c9d0e1-f2a3-4567-8901-cdef12345678",
+        "code": "FAM-110",
+        "description": "Spacious family suite with bunk beds and a play area for kids.",
+        "price_per_night": 280.0,
+        "availability_status": "Booked",
+        "floor_number": 1,
+        "room_type": "rt-family-suite",
+        "max_occupancy": 5
+      },
+      {
+        "id": "c9d0e1f2-a3b4-5678-9012-def123456789",
+        "code": "JNR-115",
+        "description": "A charming junior suite with a cozy living area and double bed.",
+        "price_per_night": 190.5,
+        "availability_status": "Booked",
+        "floor_number": 1,
+        "room_type": "rt-junior-suite",
+        "max_occupancy": 2
+      },
+      {
+        "id": "d0e1f2a3-b4c5-6789-0123-ef1234567890",
+        "code": "DLX-307",
+        "description": "A booked deluxe room, unavailable until the next checkout.",
+        "price_per_night": 225.0,
+        "availability_status": "Booked",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 4
+      },
+      {
+        "id": "e1f2a3b4-c5d6-7890-1234-f12345678901",
+        "code": "MAINT-001",
+        "description": "Room currently under maintenance for plumbing repairs.",
+        "price_per_night": 130.0,
+        "availability_status": "Maintenance",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "f2a3b4c5-d6e7-8901-2345-123456789012",
+        "code": "MAINT-002",
+        "description": "Junior suite undergoing scheduled deep cleaning and painting.",
+        "price_per_night": 195.0,
+        "availability_status": "Maintenance",
+        "floor_number": 1,
+        "room_type": "rt-junior-suite",
+        "max_occupancy": 2
+      },
+      {
+        "id": "g3h4i5j6-k7l8-9013-4567-890abcdef234",
+        "code": "STD-215",
+        "description": "Bright standard room with garden view and modern amenities.",
+        "price_per_night": 135.0,
+        "availability_status": "Available",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "h4i5j6k7-l8m9-0124-5678-90abcdef2345",
+        "code": "DLX-308",
+        "description": "Premium deluxe room featuring marble bathroom and city skyline views.",
+        "price_per_night": 245.0,
+        "availability_status": "Available",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 2
+      },
+      {
+        "id": "i5j6k7l8-m9n0-1235-6789-0abcdef23456",
+        "code": "JNR-120",
+        "description": "Contemporary junior suite with separate seating area and work desk.",
+        "price_per_night": 185.0,
+        "availability_status": "Available",
+        "floor_number": 1,
+        "room_type": "rt-junior-suite",
+        "max_occupancy": 2
+      },
+      {
+        "id": "j6k7l8m9-n0o1-2346-7890-bcdef3456789",
+        "code": "FAM-125",
+        "description": "Large family suite with connecting rooms and children's entertainment area.",
+        "price_per_night": 295.0,
+        "availability_status": "Available",
+        "floor_number": 1,
+        "room_type": "rt-family-suite",
+        "max_occupancy": 5
+      },
+      {
+        "id": "k7l8m9n0-o1p2-3457-8901-cdef456789ab",
+        "code": "EXEC-403",
+        "description": "Luxury executive suite with private balcony and concierge services.",
+        "price_per_night": 385.0,
+        "availability_status": "Available",
+        "floor_number": 4,
+        "room_type": "rt-exec-suite-king",
+        "max_occupancy": 2
+      },
+      {
+        "id": "l8m9n0o1-p2q3-4568-9012-def456789abc",
+        "code": "STD-220",
+        "description": "Comfortable standard room with eco-friendly features and natural lighting.",
+        "price_per_night": 128.0,
+        "availability_status": "Available",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+        "code": "EXEC-401",
+        "description": "Spacious executive suite with a panoramic city view and a king-sized bed.",
+        "price_per_night": 350.75,
+        "availability_status": "Available",
+        "floor_number": 4,
+        "room_type": "rt-exec-suite-king",
+        "max_occupancy": 2
+      },
+      {
+        "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
+        "code": "DLX-305",
+        "description": "Deluxe room with two queen beds, ideal for families or groups.",
+        "price_per_night": 220.0,
+        "availability_status": "Available",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 4
+      },
+      {
+        "id": "c3d4e5f6-a7b8-9012-3456-7890abcdef12",
+        "code": "STD-210",
+        "description": "Cozy standard room with a comfortable single bed, perfect for solo travelers.",
+        "price_per_night": 125.5,
+        "availability_status": "Available",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "d4e5f6a7-b8c9-0123-4567-890abcdef123",
+        "code": "DLX-306",
+        "description": "Elegant deluxe room with a stunning sea view and a queen bed.",
+        "price_per_night": 235.0,
+        "availability_status": "Available",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 2
+      },
+      {
+        "id": "e5f6a7b8-c9d0-1234-5678-90abcdef1234",
+        "code": "STD-212",
+        "description": "A quiet and comfortable standard room facing the inner courtyard.",
+        "price_per_night": 130.0,
+        "availability_status": "Available",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345",
+        "code": "PRES-501",
+        "description": "The presidential suite offers unparalleled luxury, space, and amenities.",
+        "price_per_night": 850.0,
+        "availability_status": "Available",
+        "floor_number": 5,
+        "room_type": "rt-presidential-suite",
+        "max_occupancy": 4
+      },
+      {
+        "id": "a7b8c9d0-e1f2-3456-7890-bcdef1234567",
+        "code": "EXEC-402",
+        "description": "Modern executive suite with a dedicated workspace and premium services.",
+        "price_per_night": 375.0,
+        "availability_status": "Booked",
+        "floor_number": 4,
+        "room_type": "rt-exec-suite-king",
+        "max_occupancy": 2
+      },
+      {
+        "id": "b8c9d0e1-f2a3-4567-8901-cdef12345678",
+        "code": "FAM-110",
+        "description": "Spacious family suite with bunk beds and a play area for kids.",
+        "price_per_night": 280.0,
+        "availability_status": "Booked",
+        "floor_number": 1,
+        "room_type": "rt-family-suite",
+        "max_occupancy": 5
+      },
+      {
+        "id": "c9d0e1f2-a3b4-5678-9012-def123456789",
+        "code": "JNR-115",
+        "description": "A charming junior suite with a cozy living area and double bed.",
+        "price_per_night": 190.5,
+        "availability_status": "Booked",
+        "floor_number": 1,
+        "room_type": "rt-junior-suite",
+        "max_occupancy": 2
+      },
+      {
+        "id": "d0e1f2a3-b4c5-6789-0123-ef1234567890",
+        "code": "DLX-307",
+        "description": "A booked deluxe room, unavailable until the next checkout.",
+        "price_per_night": 225.0,
+        "availability_status": "Booked",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 4
+      },
+      {
+        "id": "e1f2a3b4-c5d6-7890-1234-f12345678901",
+        "code": "MAINT-001",
+        "description": "Room currently under maintenance for plumbing repairs.",
+        "price_per_night": 130.0,
+        "availability_status": "Maintenance",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "f2a3b4c5-d6e7-8901-2345-123456789012",
+        "code": "MAINT-002",
+        "description": "Junior suite undergoing scheduled deep cleaning and painting.",
+        "price_per_night": 195.0,
+        "availability_status": "Maintenance",
+        "floor_number": 1,
+        "room_type": "rt-junior-suite",
+        "max_occupancy": 2
+      },
+      {
+        "id": "f3a4b5c6-d7e8-9012-3456-789abcdef123",
+        "code": "STD-213",
+        "description": "Quiet standard room with a view of the garden.",
+        "price_per_night": 135.0,
+        "availability_status": "Maintenance",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "g4b5c6d7-e8f9-0123-4567-89abcdef1234",
+        "code": "DLX-308",
+        "description": "Luxurious deluxe room with a private balcony.",
+        "price_per_night": 240.0,
+        "availability_status": "Booked",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 2
+      },
+      {
+        "id": "h5c6d7e8-f9a0-1234-5678-9abcdef12345",
+        "code": "EXEC-403",
+        "description": "Executive suite with a modern kitchenette.",
+        "price_per_night": 360.0,
+        "availability_status": "Available",
+        "floor_number": 4,
+        "room_type": "rt-exec-suite-king",
+        "max_occupancy": 2
+      },
+      {
+        "id": "i6d7e8f9-a0b1-2345-6789-abcdef123456",
+        "code": "PRES-502",
+        "description": "Luxurious presidential suite with a private terrace.",
+        "price_per_night": 875.0,
+        "availability_status": "Booked",
+        "floor_number": 5,
+        "room_type": "rt-presidential-suite",
+        "max_occupancy": 4
+      },
+      {
+        "id": "j7e8f9a0-b1c2-3456-789a-bcdef1234567",
+        "code": "FAM-111",
+        "description": "Family suite with a game room for kids.",
+        "price_per_night": 290.0,
+        "availability_status": "Maintenance",
+        "floor_number": 1,
+        "room_type": "rt-family-suite",
+        "max_occupancy": 5
+      },
+      {
+        "id": "k8f9a0b1-c2d3-4567-89ab-cdef12345678",
+        "code": "JNR-116",
+        "description": "Junior suite with a fireplace and city view.",
+        "price_per_night": 200.0,
+        "availability_status": "Booked",
+        "floor_number": 1,
+        "room_type": "rt-junior-suite",
+        "max_occupancy": 2
+      },
+      {
+        "id": "l9a0b1c2-d3e4-5678-90bc-def123456789",
+        "code": "DLX-309",
+        "description": "Deluxe room with a jacuzzi and mountain view.",
+        "price_per_night": 245.0,
+        "availability_status": "Available",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 2
+      },
+      {
+        "id": "m0b1c2d3-e4f5-6789-01cd-ef1234567890",
+        "code": "STD-214",
+        "description": "Standard room with a modern decor.",
+        "price_per_night": 140.0,
+        "availability_status": "Booked",
+        "floor_number": 2,
+        "room_type": "rt-standard-single",
+        "max_occupancy": 1
+      },
+      {
+        "id": "n1c2d3e4-f5a6-7890-12de-f12345678901",
+        "code": "EXEC-404",
+        "description": "Executive suite with a private gym.",
+        "price_per_night": 370.0,
+        "availability_status": "Maintenance",
+        "floor_number": 4,
+        "room_type": "rt-exec-suite-king",
+        "max_occupancy": 2
+      },
+      {
+        "id": "m9n0o1p2-q3r4-5679-0123-ef456789abcd",
+        "code": "DLX-310",
+        "description": "Sophisticated deluxe room with panoramic ocean views and premium linens.",
+        "price_per_night": 255.0,
+        "availability_status": "Available",
+        "floor_number": 3,
+        "room_type": "rt-deluxe-double-queen",
+        "max_occupancy": 4
+      },
+      {
+        "id": "n0o1p2q3-r4s5-6780-1234-f456789abcde",
+        "code": "PRES-502",
+        "description": "Ultimate presidential suite with private dining room and 24/7 butler service.",
+        "price_per_night": 925.0,
+        "availability_status": "Available",
+        "floor_number": 5,
+        "room_type": "rt-presidential-suite",
+        "max_occupancy": 4
+      },
+      {
+        "id": "o1p2q3r4-s5t6-7891-2345-456789abcdef",
+        "code": "JNR-130",
+        "description": "Stylish junior suite with modern decor and smart room technology.",
+        "price_per_night": 195.5,
+        "availability_status": "Available",
+        "floor_number": 1,
+        "room_type": "rt-junior-suite",
+        "max_occupancy": 2
+      }
+    ]
+  },
+  "room-types": {
+    "count": 6,
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "id": "rt-standard-single",
+        "name": "Standard Room",
+        "bed_type": "Single"
+      },
+      {
+        "id": "rt-deluxe-double-queen",
+        "name": "Deluxe Double",
+        "bed_type": "Queen"
+      },
+      {
+        "id": "rt-exec-suite-king",
+        "name": "Executive Suite",
+        "bed_type": "King"
+      },
+      {
+        "id": "rt-presidential-suite",
+        "name": "Presidential Suite",
+        "bed_type": "Super King"
+      },
+      {
+        "id": "rt-family-suite",
+        "name": "Family Suite",
+        "bed_type": "Bunk & Queen"
+      },
+      {
+        "id": "rt-junior-suite",
+        "name": "Junior Suite",
+        "bed_type": "Double"
+      }
+    ]
+  }
+}
