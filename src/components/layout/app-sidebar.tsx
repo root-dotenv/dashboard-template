@@ -52,8 +52,8 @@ const NavItem = ({
             "flex w-full items-center rounded-lg p-2 transition-colors duration-200",
             isCollapsed ? "justify-center" : "justify-between",
             isActive
-              ? "bg-blue-50 text-blue-700 dark:bg-[#162142]"
-              : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433]"
+              ? "bg-blue-50 text-blue-700 dark:bg-[#162142] dark:text-[#7592FF]"
+              : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433] dark:text-[#7592FF]"
           )}
         >
           <div className="flex items-center gap-3">
@@ -92,13 +92,21 @@ const NavItem = ({
                   key={child.title}
                   to={child.url}
                   className={cn(
-                    "p-2 text-sm rounded-md transition-colors duration-200",
+                    "flex items-center gap-3 p-2 text-sm rounded-md transition-colors duration-200",
                     isChildActive
-                      ? "bg-blue-100/80 font-medium text-blue-700 dark:bg-[#162142] dark:text-[#7592FF]"
+                      ? "bg-blue-50 font-medium text-blue-700 dark:bg-[#162142] dark:text-[#7592FF]"
                       : "text-[#667085] hover:bg-gray-100/50 hover:text-gray-800 dark:text-[#98A2B3] dark:hover:bg-[#1C2433]"
                   )}
                 >
-                  {child.title}
+                  {/* --- ENHANCEMENT START --- */}
+                  <child.icon
+                    className={cn(
+                      "h-2 w-2 border-none hover:border-none hover:bg-none",
+                      isChildActive ? "fill-blue-700" : "text-[#344055]"
+                    )}
+                  />
+                  <span>{child.title}</span>
+                  {/* --- ENHANCEMENT END --- */}
                 </Link>
               );
             })}

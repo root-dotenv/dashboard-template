@@ -1,5 +1,5 @@
 // src/lib/nav-data.ts
-import { Bed, PieChart } from "lucide-react";
+import { Bed, PieChart, Circle } from "lucide-react"; // <-- Import Circle icon
 import { FiUserCheck } from "react-icons/fi";
 import { MdOutlineInventory2 } from "react-icons/md";
 import { BsGrid } from "react-icons/bs";
@@ -24,69 +24,90 @@ export const navData = {
       title: "Hotel Management",
       icon: RiHotelLine,
       items: [
-        { title: "My Hotel", url: "/hotel/hotel-details" },
-        { title: "Hotel Features", url: "/hotel/hotel-features" },
+        { title: "My Hotel", url: "/hotel/hotel-details", icon: Circle },
+        { title: "Hotel Features", url: "/hotel/hotel-features", icon: Circle },
       ],
     },
     {
       title: "Bookings",
       icon: HiOutlineTicket,
       items: [
-        { title: "New Booking", url: "/bookings/new-booking" },
-        { title: "All Bookings", url: "/bookings/all-bookings" },
-        { title: "SafariPro Bookings", url: "/bookings/safaripro-bookings" },
+        { title: "New Booking", url: "/bookings/new-booking", icon: Circle },
+        { title: "All Bookings", url: "/bookings/all-bookings", icon: Circle },
+        {
+          title: "SafariPro Bookings",
+          url: "/bookings/safaripro-bookings",
+          icon: Circle,
+        },
       ],
     },
     {
       title: "Rooms",
       icon: Bed,
       items: [
-        { title: "New Room", url: "/rooms/new-room" },
-        { title: "Hotel Rooms", url: "/rooms/hotel-rooms" },
-        { title: "Room Types", url: "/rooms/room-types" },
+        { title: "New Room", url: "/rooms/new-room", icon: Circle },
+        { title: "Hotel Rooms", url: "/rooms/hotel-rooms", icon: Circle },
+        { title: "Room Types", url: "/rooms/room-types", icon: Circle },
         {
           title: "Available Rooms By Date",
           url: "/rooms/available-rooms-by-date",
+          icon: Circle,
         },
-        { title: "Allocate Rooms", url: "/rooms/allocate-rooms" },
-        { title: "Allocations", url: "/rooms/rooms-allocations" },
+        { title: "Allocate Rooms", url: "/rooms/allocate-rooms", icon: Circle },
+        { title: "Allocations", url: "/rooms/rooms-allocations", icon: Circle },
       ],
     },
     {
       title: "Reservations",
       icon: FiUserCheck,
       items: [
-        { title: "Check-in", url: "/reservations/checkin" },
-        { title: "Check-out", url: "/reservations/checkout" },
-        { title: "Special Requests", url: "/reservations/special-requests" },
+        { title: "Check-in", url: "/reservations/checkin", icon: Circle },
+        { title: "Check-out", url: "/reservations/checkout", icon: Circle },
+        {
+          title: "Special Requests",
+          url: "/reservations/special-requests",
+          icon: Circle,
+        },
       ],
     },
     {
       title: "House Keeping",
       icon: MdOutlineInventory2,
       items: [
-        { title: "Departments", url: "/house-keeping/departments" },
-
+        {
+          title: "Departments",
+          url: "/house-keeping/departments",
+          icon: Circle,
+        },
         {
           title: "Inventory Categories",
           url: "/house-keeping/inventory-categories",
+          icon: Circle,
         },
-        { title: "Inventory Items", url: "/house-keeping/inventory-items" },
+        {
+          title: "Inventory Items",
+          url: "/house-keeping/inventory-items",
+          icon: Circle,
+        },
         {
           title: "Event Spaces Types",
           url: "/house-keeping/event-space-types",
+          icon: Circle,
         },
-        { title: "Event Spaces", url: "/house-keeping/event-spaces" },
+        {
+          title: "Event Spaces",
+          url: "/house-keeping/event-spaces",
+          icon: Circle,
+        },
       ],
     },
-
     {
       title: "Billings & Payments",
       icon: MdPayment,
       items: [
-        { title: "Payouts", url: "/billings/payouts" },
-        { title: "Charges", url: "/billings/charges" },
-        { title: "Invoices", url: "/billings/invoices" },
+        { title: "Payouts", url: "/billings/payouts", icon: Circle },
+        { title: "Charges", url: "/billings/charges", icon: Circle },
+        { title: "Invoices", url: "/billings/invoices", icon: Circle },
       ],
     },
   ],
