@@ -4,14 +4,8 @@
 // import { yupResolver } from "@hookform/resolvers/yup";
 // import * as yup from "yup";
 // import { toast } from "sonner";
-// import {
-//   Loader2,
-//   Users,
-//   Building,
-//   PlusCircle,
-//   ImageIcon,
-//   Trash2,
-// } from "lucide-react";
+// import { useEffect } from "react";
+// import { Loader2, Users, Building, ImageIcon, Trash2 } from "lucide-react";
 // import { Button } from "@/components/ui/button";
 // import {
 //   SheetHeader,
@@ -43,7 +37,6 @@
 // import { Separator } from "@/components/ui/separator";
 // import hotelClient from "../../api/hotel-client";
 // import { cn } from "@/lib/utils";
-// import { useState } from "react";
 // import { BsCurrencyDollar } from "react-icons/bs";
 // import { LuImagePlus } from "react-icons/lu";
 
@@ -82,6 +75,8 @@
 
 // interface EditRoomFormProps {
 //   room: RoomDetails;
+//   onUpdateComplete: () => void;
+//   onDirtyChange: (isDirty: boolean) => void;
 // }
 
 // // --- VALIDATION SCHEMA ---
@@ -127,9 +122,12 @@
 //     .min(1, "At least one amenity must be selected."),
 // });
 
-// export default function EditRoomForm({ room }: EditRoomFormProps) {
+// export default function EditRoomForm({
+//   room,
+//   onUpdateComplete,
+//   onDirtyChange,
+// }: EditRoomFormProps) {
 //   const queryClient = useQueryClient();
-//   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
 //   const { data: roomTypes, isLoading: isLoadingTypes } = useQuery<RoomType[]>({
 //     queryKey: ["roomTypes"],
@@ -159,8 +157,19 @@
 //     mode: "onChange",
 //   });
 
+//   const {
+//     control,
+//     handleSubmit,
+//     watch,
+//     formState: { isDirty },
+//   } = form;
+
+//   useEffect(() => {
+//     onDirtyChange(isDirty);
+//   }, [isDirty, onDirtyChange]);
+
 //   const { fields, append, remove } = useFieldArray({
-//     control: form.control,
+//     control,
 //     name: "images",
 //   });
 
@@ -168,26 +177,17 @@
 //     mutationFn: (updatedData: Partial<EditRoomFormData & { image: string }>) =>
 //       hotelClient.patch(`/rooms/${room.id}/`, updatedData),
 //     onSuccess: () => {
-//       // Enhanced success message with auto-close
 //       toast.success("✅ Room details updated successfully!", {
 //         description: "All changes have been saved and are now live.",
 //         duration: 3000,
 //       });
 
-//       // Invalidate queries to refresh data
 //       queryClient.invalidateQueries({ queryKey: ["roomDetails", room.id] });
 //       queryClient.invalidateQueries({ queryKey: ["rooms"] });
 
-//       // Auto-close the sheet after a short delay
 //       setTimeout(() => {
-//         // Trigger the sheet close by clicking the close button
-//         const closeButton = document.querySelector(
-//           '[data-sheet-close="true"]'
-//         ) as HTMLButtonElement;
-//         if (closeButton) {
-//           closeButton.click();
-//         }
-//       }, 1500);
+//         onUpdateComplete();
+//       }, 500);
 //     },
 //     onError: (error: any) => {
 //       toast.error(
@@ -223,7 +223,7 @@
 //     updateRoomMutation.mutate(payload);
 //   };
 
-//   const currentImages = form.watch("images");
+//   const currentImages = watch("images");
 
 //   const getStatusBadgeVariant = (status: string) => {
 //     switch (status) {
@@ -253,23 +253,11 @@
 //     }
 //   };
 
-//   const nextImage = () => {
-//     if (currentImages && currentImages.length > 0) {
-//       setCurrentImageIndex((prev) => (prev + 1) % currentImages.length);
-//     }
-//   };
-
-//   const prevImage = () => {
-//     if (currentImages && currentImages.length > 0) {
-//       setCurrentImageIndex((prev) =>
-//         prev === 0 ? currentImages.length - 1 : prev - 1
-//       );
-//     }
-//   };
+//   const focusRingClass =
+//     "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500";
 
 //   return (
 //     <div className="flex flex-col h-full bg-[#FFF] border-none">
-//       {/* Header - Fixed at top */}
 //       <SheetHeader className="flex-shrink-0 px-6 pt-6 pb-6 bg-[#F9FAFB] border border-b-[#E4E7EC]">
 //         <div className="flex items-center justify-between">
 //           <div className="space-y-2">
@@ -285,10 +273,7 @@
 //               </Badge>
 //               <Badge
 //                 variant={getStatusVariant(room.availability_status)}
-//                 className={cn(
-//                   "text-sm px-3 py-1",
-//                   getStatusBadgeVariant(room.availability_status)
-//                 )}
+//                 className="text-sm px-3 py-1"
 //               >
 //                 {room.availability_status}
 //               </Badge>
@@ -303,13 +288,11 @@
 
 //       <Form {...form}>
 //         <form
-//           onSubmit={form.handleSubmit(onFormSubmit)}
+//           onSubmit={handleSubmit(onFormSubmit)}
 //           className="flex flex-col h-full min-h-0"
 //         >
-//           {/* Scrollable Content Area */}
 //           <div className="flex-1 overflow-y-auto px-8 py-6">
 //             <div className="space-y-8 pb-6">
-//               {/* Room Gallery Section */}
 //               <Card className="border-none p-0 border-gray-200 bg-gray-50/30 noScroll">
 //                 <CardContent className="p-0">
 //                   <div className="space-y-6">
@@ -320,13 +303,12 @@
 //                       </FormLabel>
 //                     </div>
 
-//                     {/* Horizontal Scrollable Image Strip */}
 //                     {currentImages && currentImages.length > 0 ? (
 //                       <div className="flex gap-4 overflow-x-auto noScroll pb-2">
 //                         {currentImages.map((image, index) => (
 //                           <div
 //                             key={index}
-//                             className="relative flex-shrink-0 w-64 h-40 rounded-md border shadow-xs overflow-hidden"
+//                             className="group relative flex-shrink-0 w-64 h-40 rounded-md border shadow-xs overflow-hidden"
 //                           >
 //                             {image.url ? (
 //                               <img
@@ -343,6 +325,14 @@
 //                                 <ImageIcon className="h-6 w-6" />
 //                               </div>
 //                             )}
+//                             <Button
+//                               type="button"
+//                               size="icon"
+//                               className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-gray-900 opacity-0 group-hover:opacity-100 transition-all shadow-xs z-10 hover:bg-[#FFF] hover:text-rose-600 cursor-pointer"
+//                               onClick={() => remove(index)}
+//                             >
+//                               <Trash2 className="h-4 w-4" />
+//                             </Button>
 //                           </div>
 //                         ))}
 //                       </div>
@@ -356,7 +346,6 @@
 //                       </div>
 //                     )}
 
-//                     {/* Image URL Inputs */}
 //                     <div className="space-y-4">
 //                       <div className="flex items-center justify-between">
 //                         <h4 className="font-medium text-[#1D2939]">
@@ -377,7 +366,7 @@
 //                         {fields.map((field, index) => (
 //                           <FormField
 //                             key={field.id}
-//                             control={form.control}
+//                             control={control}
 //                             name={`images.${index}.url`}
 //                             render={({ field: inputField }) => (
 //                               <FormItem>
@@ -388,20 +377,14 @@
 //                                         placeholder={`Enter image URL ${
 //                                           index + 1
 //                                         }`}
-//                                         className="h-11 rounded-lg focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2"
+//                                         className={cn(
+//                                           "h-11 rounded-lg",
+//                                           focusRingClass
+//                                         )}
 //                                         {...inputField}
 //                                       />
 //                                     </FormControl>
 //                                   </div>
-//                                   <Button
-//                                     type="button"
-//                                     variant="outline"
-//                                     size="icon"
-//                                     className="h-11 w-11 shadow-xs text-[#344054] bg-[#F2F4F7] rounded-[12px] cursor-pointer"
-//                                     onClick={() => remove(index)}
-//                                   >
-//                                     <Trash2 className="h-4 w-4" />
-//                                   </Button>
 //                                 </div>
 //                                 <FormMessage />
 //                               </FormItem>
@@ -414,133 +397,15 @@
 //                 </CardContent>
 //               </Card>
 
-//               {/* Basic Information Section */}
+//               <Separator />
+
 //               <div className="space-y-6">
 //                 <h3 className="text-xl font-semibold text-[#1D2939]">
-//                   Basic Information
+//                   Room Type & Status
 //                 </h3>
-
-//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
 //                   <FormField
-//                     control={form.control}
-//                     name="code"
-//                     render={({ field }) => (
-//                       <FormItem>
-//                         <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
-//                           Room Code
-//                         </FormLabel>
-//                         <FormControl>
-//                           <Input
-//                             placeholder="e.g., DLX-101"
-//                             className="h-11 rounded-lg focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2"
-//                             {...field}
-//                           />
-//                         </FormControl>
-//                         <FormMessage />
-//                       </FormItem>
-//                     )}
-//                   />
-
-//                   <FormField
-//                     control={form.control}
-//                     name="price_per_night"
-//                     render={({ field }) => (
-//                       <FormItem>
-//                         <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
-//                           Price per Night
-//                         </FormLabel>
-//                         <div className="relative">
-//                           <BsCurrencyDollar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-//                           <FormControl>
-//                             <Input
-//                               type="number"
-//                               step="0.01"
-//                               className="pl-10 h-11 rounded-lg focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2"
-//                               placeholder="0.00"
-//                               {...field}
-//                             />
-//                           </FormControl>
-//                         </div>
-//                         <FormMessage />
-//                       </FormItem>
-//                     )}
-//                   />
-
-//                   <FormField
-//                     control={form.control}
-//                     name="max_occupancy"
-//                     render={({ field }) => (
-//                       <FormItem>
-//                         <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
-//                           Maximum Occupancy
-//                         </FormLabel>
-//                         <div className="relative">
-//                           <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-//                           <FormControl>
-//                             <Input
-//                               type="number"
-//                               className="pl-10 h-11 rounded-lg focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2"
-//                               placeholder="0"
-//                               {...field}
-//                             />
-//                           </FormControl>
-//                         </div>
-//                         <FormMessage />
-//                       </FormItem>
-//                     )}
-//                   />
-
-//                   <FormField
-//                     control={form.control}
-//                     name="floor_number"
-//                     render={({ field }) => (
-//                       <FormItem>
-//                         <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
-//                           Floor Number
-//                         </FormLabel>
-//                         <div className="relative">
-//                           <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-//                           <FormControl>
-//                             <Input
-//                               type="number"
-//                               className="pl-10 h-11 rounded-lg focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2"
-//                               placeholder="0"
-//                               {...field}
-//                             />
-//                           </FormControl>
-//                         </div>
-//                         <FormMessage />
-//                       </FormItem>
-//                     )}
-//                   />
-//                 </div>
-
-//                 <FormField
-//                   control={form.control}
-//                   name="description"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
-//                         Description
-//                       </FormLabel>
-//                       <FormControl>
-//                         <Textarea
-//                           placeholder="Provide a detailed description of the room and its features..."
-//                           className="min-h-[120px] rounded-lg focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2 resize-none text-[1rem]"
-//                           {...field}
-//                         />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//               </div>
-
-//               {/* Room Type and Availability Status */}
-//               <div className="space-y-6">
-//                 <div className="w-full flex items-center gap-x-4">
-//                   <FormField
-//                     control={form.control}
+//                     control={control}
 //                     name="room_type_id"
 //                     render={({ field }) => (
 //                       <FormItem>
@@ -553,7 +418,12 @@
 //                           disabled={isLoadingTypes}
 //                         >
 //                           <FormControl>
-//                             <SelectTrigger className="h-11 rounded-lg focus:ring-blue-500 focus:ring-2 focus:ring-offset-2">
+//                             <SelectTrigger
+//                               className={cn(
+//                                 "h-11 text-base rounded-lg",
+//                                 focusRingClass
+//                               )}
+//                             >
 //                               <SelectValue placeholder="Select room type" />
 //                             </SelectTrigger>
 //                           </FormControl>
@@ -569,9 +439,8 @@
 //                       </FormItem>
 //                     )}
 //                   />
-
 //                   <FormField
-//                     control={form.control}
+//                     control={control}
 //                     name="availability_status"
 //                     render={({ field }) => (
 //                       <FormItem>
@@ -583,7 +452,12 @@
 //                           defaultValue={field.value}
 //                         >
 //                           <FormControl>
-//                             <SelectTrigger className="h-11 rounded-lg focus:ring-blue-500 focus:ring-2 focus:ring-offset-2">
+//                             <SelectTrigger
+//                               className={cn(
+//                                 "h-11 text-base rounded-lg",
+//                                 focusRingClass
+//                               )}
+//                             >
 //                               <SelectValue placeholder="Select status" />
 //                             </SelectTrigger>
 //                           </FormControl>
@@ -617,10 +491,142 @@
 
 //               <Separator />
 
-//               {/* Amenities Section */}
+//               <div className="space-y-6">
+//                 <h3 className="text-xl font-semibold text-[#1D2939]">
+//                   Basic Information
+//                 </h3>
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
+//                   <FormField
+//                     control={control}
+//                     name="code"
+//                     render={({ field }) => (
+//                       <FormItem>
+//                         <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+//                           Room Code
+//                         </FormLabel>
+//                         <FormControl>
+//                           <Input
+//                             placeholder="e.g., DLX-101"
+//                             className={cn(
+//                               "h-11 text-base rounded-lg",
+//                               focusRingClass
+//                             )}
+//                             {...field}
+//                           />
+//                         </FormControl>
+//                         <FormMessage />
+//                       </FormItem>
+//                     )}
+//                   />
+//                   <FormField
+//                     control={control}
+//                     name="price_per_night"
+//                     render={({ field }) => (
+//                       <FormItem>
+//                         <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+//                           Price per Night
+//                         </FormLabel>
+//                         <div className="relative">
+//                           <BsCurrencyDollar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+//                           <FormControl>
+//                             <Input
+//                               type="number"
+//                               step="0.01"
+//                               className={cn(
+//                                 "pl-10 h-11 text-[0.9375rem] rounded-lg",
+//                                 focusRingClass
+//                               )}
+//                               placeholder="0.00"
+//                               {...field}
+//                             />
+//                           </FormControl>
+//                         </div>
+//                         <FormMessage />
+//                       </FormItem>
+//                     )}
+//                   />
+//                   <FormField
+//                     control={control}
+//                     name="max_occupancy"
+//                     render={({ field }) => (
+//                       <FormItem>
+//                         <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+//                           Maximum Occupancy
+//                         </FormLabel>
+//                         <div className="relative">
+//                           <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+//                           <FormControl>
+//                             <Input
+//                               type="number"
+//                               className={cn(
+//                                 "pl-10 h-11 text-base rounded-lg",
+//                                 focusRingClass
+//                               )}
+//                               placeholder="0"
+//                               {...field}
+//                             />
+//                           </FormControl>
+//                         </div>
+//                         <FormMessage />
+//                       </FormItem>
+//                     )}
+//                   />
+//                   <FormField
+//                     control={control}
+//                     name="floor_number"
+//                     render={({ field }) => (
+//                       <FormItem>
+//                         <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+//                           Floor Number
+//                         </FormLabel>
+//                         <div className="relative">
+//                           <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+//                           <FormControl>
+//                             <Input
+//                               type="number"
+//                               className={cn(
+//                                 "pl-10 h-11 text-base rounded-lg",
+//                                 focusRingClass
+//                               )}
+//                               placeholder="0"
+//                               {...field}
+//                             />
+//                           </FormControl>
+//                         </div>
+//                         <FormMessage />
+//                       </FormItem>
+//                     )}
+//                   />
+//                 </div>
+//                 <FormField
+//                   control={control}
+//                   name="description"
+//                   render={({ field }) => (
+//                     <FormItem>
+//                       <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+//                         Description
+//                       </FormLabel>
+//                       <FormControl>
+//                         <Textarea
+//                           placeholder="Provide a detailed description of the room and its features..."
+//                           className={cn(
+//                             "min-h-[120px] text-base resize-none rounded-lg",
+//                             focusRingClass
+//                           )}
+//                           {...field}
+//                         />
+//                       </FormControl>
+//                       <FormMessage />
+//                     </FormItem>
+//                   )}
+//                 />
+//               </div>
+
+//               <Separator />
+
 //               <div className="space-y-6">
 //                 <FormField
-//                   control={form.control}
+//                   control={control}
 //                   name="room_amenities"
 //                   render={({ field }) => (
 //                     <FormItem>
@@ -681,15 +687,12 @@
 //             </div>
 //           </div>
 
-//           {/* Fixed Footer with Actions */}
 //           <SheetFooter className="flex-shrink-0 px-6 shadow-lg py-4 border-t bg-white">
 //             <div className="flex items-center justify-end gap-3 w-full">
 //               <button
 //                 className="bg-blue-600 hover:bg-blue-700 text-[#FFF] flex items-center gap-x-2 py-2.5 px-4 rounded-full text-[1rem] cursor-pointer transition-all focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2"
 //                 type="submit"
-//                 disabled={
-//                   updateRoomMutation.isPending || !form.formState.isDirty
-//                 }
+//                 disabled={updateRoomMutation.isPending || !isDirty}
 //               >
 //                 {updateRoomMutation.isPending && (
 //                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -941,19 +944,6 @@ export default function EditRoomForm({
 
   const currentImages = watch("images");
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "Available":
-        return "bg-emerald-100 text-emerald-800 hover:bg-emerald-100";
-      case "Booked":
-        return "bg-amber-100 text-amber-800 hover:bg-amber-100";
-      case "Maintenance":
-        return "bg-red-100 text-red-800 hover:bg-red-100";
-      default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
-    }
-  };
-
   const getStatusVariant = (
     status: string
   ): "success" | "pending" | "failed" | "default" => {
@@ -971,32 +961,34 @@ export default function EditRoomForm({
 
   const focusRingClass =
     "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500";
+  const inputBaseClass =
+    "dark:bg-[#171F2F] dark:border-[#1D2939] dark:text-[#D0D5DD] dark:placeholder:text-[#5D636E]";
 
   return (
-    <div className="flex flex-col h-full bg-[#FFF] border-none">
-      <SheetHeader className="flex-shrink-0 px-6 pt-6 pb-6 bg-[#F9FAFB] border border-b-[#E4E7EC]">
+    <div className="flex flex-col h-full bg-[#FFF] dark:bg-[#101828] border-none">
+      <SheetHeader className="flex-shrink-0 px-6 pt-6 pb-6 bg-[#F9FAFB] dark:bg-[#101828] border-b border-[#E4E7EC] dark:border-b-[#1D2939]">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <SheetTitle className="text-3xl font-bold text-[#1D2939]">
+            <SheetTitle className="text-3xl font-bold text-[#1D2939] dark:text-[#D0D5DD]">
               Edit Room Details
             </SheetTitle>
             <div className="flex items-center gap-3">
               <Badge
                 variant="outline"
-                className="text-lg px-3 py-1 font-semibold"
+                className="text-lg px-3 py-1 font-semibold dark:border-[#1D2939] dark:text-[#D0D5DD]"
               >
                 {room.code}
               </Badge>
               <Badge
                 variant={getStatusVariant(room.availability_status)}
-                className="text-sm px-3 py-1"
+                className="text-sm px-3 py-1 dark:bg-transparent dark:border-none"
               >
                 {room.availability_status}
               </Badge>
             </div>
           </div>
         </div>
-        <SheetDescription className="text-base text-[#667085] mt-2">
+        <SheetDescription className="text-base text-[#667085] dark:text-[#98A2B3] mt-2">
           Modify room configuration, pricing, and amenities. All changes will be
           applied immediately upon saving.
         </SheetDescription>
@@ -1009,12 +1001,12 @@ export default function EditRoomForm({
         >
           <div className="flex-1 overflow-y-auto px-8 py-6">
             <div className="space-y-8 pb-6">
-              <Card className="border-none p-0 border-gray-200 bg-gray-50/30 noScroll">
+              <Card className="border-none p-0 bg-transparent dark:bg-transparent noScroll">
                 <CardContent className="p-0">
                   <div className="space-y-6">
                     <div className="flex items-center gap-2">
-                      <ImageIcon className="h-5 w-5 text-gray-600" />
-                      <FormLabel className="text-lg font-semibold text-[#1D2939]">
+                      <ImageIcon className="h-5 w-5 text-gray-600 dark:text-[#98A2B3]" />
+                      <FormLabel className="text-lg font-semibold text-[#1D2939] dark:text-[#D0D5DD]">
                         Room Gallery
                       </FormLabel>
                     </div>
@@ -1024,7 +1016,7 @@ export default function EditRoomForm({
                         {currentImages.map((image, index) => (
                           <div
                             key={index}
-                            className="group relative flex-shrink-0 w-64 h-40 rounded-md border shadow-xs overflow-hidden"
+                            className="group relative flex-shrink-0 w-64 h-40 rounded-md border dark:border-[#1D2939] shadow-xs overflow-hidden"
                           >
                             {image.url ? (
                               <img
@@ -1037,14 +1029,14 @@ export default function EditRoomForm({
                                 }
                               />
                             ) : (
-                              <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-400">
+                              <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-[#171F2F] text-gray-400 dark:text-[#5D636E]">
                                 <ImageIcon className="h-6 w-6" />
                               </div>
                             )}
                             <Button
                               type="button"
                               size="icon"
-                              className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-gray-900 opacity-0 group-hover:opacity-100 transition-all shadow-xs z-10 hover:bg-[#FFF] hover:text-rose-600 cursor-pointer"
+                              className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-gray-900 opacity-0 group-hover:opacity-100 transition-all shadow-xs z-10 hover:bg-[#FFF] hover:text-rose-600 dark:bg-[#101828]/80 dark:text-[#D0D5DD] dark:hover:bg-[#101828] dark:hover:text-rose-400 cursor-pointer"
                               onClick={() => remove(index)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1053,9 +1045,9 @@ export default function EditRoomForm({
                         ))}
                       </div>
                     ) : (
-                      <div className="h-40 flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg">
+                      <div className="h-40 flex items-center justify-center bg-gray-100 dark:bg-[#171F2F] text-gray-500 dark:text-[#98A2B3] rounded-lg">
                         <div className="text-center">
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                          <ImageIcon className="h-12 w-12 mx-auto mb-2 text-gray-400 dark:text-[#5D636E]" />
                           <p className="text-lg">No images available</p>
                           <p className="text-sm">Add image URLs below</p>
                         </div>
@@ -1064,7 +1056,7 @@ export default function EditRoomForm({
 
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-[#1D2939]">
+                        <h4 className="font-medium text-[#1D2939] dark:text-[#D0D5DD]">
                           Manage Image URLs
                         </h4>
                         <Button
@@ -1095,7 +1087,8 @@ export default function EditRoomForm({
                                         }`}
                                         className={cn(
                                           "h-11 rounded-lg",
-                                          focusRingClass
+                                          focusRingClass,
+                                          inputBaseClass
                                         )}
                                         {...inputField}
                                       />
@@ -1113,10 +1106,10 @@ export default function EditRoomForm({
                 </CardContent>
               </Card>
 
-              <Separator />
+              <Separator className="dark:bg-[#1D2939]" />
 
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-[#1D2939]">
+                <h3 className="text-xl font-semibold text-[#1D2939] dark:text-[#D0D5DD]">
                   Room Type & Status
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
@@ -1125,7 +1118,7 @@ export default function EditRoomForm({
                     name="room_type_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+                        <FormLabel className="text-[0.9375rem] text-[#667085] dark:text-[#98A2B3] font-medium">
                           Room Type
                         </FormLabel>
                         <Select
@@ -1137,13 +1130,14 @@ export default function EditRoomForm({
                             <SelectTrigger
                               className={cn(
                                 "h-11 text-base rounded-lg",
-                                focusRingClass
+                                focusRingClass,
+                                inputBaseClass
                               )}
                             >
                               <SelectValue placeholder="Select room type" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="dark:bg-[#101828] dark:border-[#1D2939] dark:text-[#D0D5DD]">
                             {roomTypes?.map((type) => (
                               <SelectItem key={type.id} value={type.id}>
                                 {type.name}
@@ -1160,7 +1154,7 @@ export default function EditRoomForm({
                     name="availability_status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+                        <FormLabel className="text-[0.9375rem] text-[#667085] dark:text-[#98A2B3] font-medium">
                           Availability Status
                         </FormLabel>
                         <Select
@@ -1171,13 +1165,14 @@ export default function EditRoomForm({
                             <SelectTrigger
                               className={cn(
                                 "h-11 text-base rounded-lg",
-                                focusRingClass
+                                focusRingClass,
+                                inputBaseClass
                               )}
                             >
                               <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="dark:bg-[#101828] dark:border-[#1D2939] dark:text-[#D0D5DD]">
                             <SelectItem value="Available">
                               <span className="flex items-center gap-2">
                                 <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -1205,10 +1200,10 @@ export default function EditRoomForm({
                 </div>
               </div>
 
-              <Separator />
+              <Separator className="dark:bg-[#1D2939]" />
 
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-[#1D2939]">
+                <h3 className="text-xl font-semibold text-[#1D2939] dark:text-[#D0D5DD]">
                   Basic Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
@@ -1217,7 +1212,7 @@ export default function EditRoomForm({
                     name="code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+                        <FormLabel className="text-[0.9375rem] text-[#667085] dark:text-[#98A2B3] font-medium">
                           Room Code
                         </FormLabel>
                         <FormControl>
@@ -1225,7 +1220,8 @@ export default function EditRoomForm({
                             placeholder="e.g., DLX-101"
                             className={cn(
                               "h-11 text-base rounded-lg",
-                              focusRingClass
+                              focusRingClass,
+                              inputBaseClass
                             )}
                             {...field}
                           />
@@ -1239,18 +1235,19 @@ export default function EditRoomForm({
                     name="price_per_night"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+                        <FormLabel className="text-[0.9375rem] text-[#667085] dark:text-[#98A2B3] font-medium">
                           Price per Night
                         </FormLabel>
                         <div className="relative">
-                          <BsCurrencyDollar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <BsCurrencyDollar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-[#5D636E]" />
                           <FormControl>
                             <Input
                               type="number"
                               step="0.01"
                               className={cn(
                                 "pl-10 h-11 text-[0.9375rem] rounded-lg",
-                                focusRingClass
+                                focusRingClass,
+                                inputBaseClass
                               )}
                               placeholder="0.00"
                               {...field}
@@ -1266,17 +1263,18 @@ export default function EditRoomForm({
                     name="max_occupancy"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+                        <FormLabel className="text-[0.9375rem] text-[#667085] dark:text-[#98A2B3] font-medium">
                           Maximum Occupancy
                         </FormLabel>
                         <div className="relative">
-                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-[#5D636E]" />
                           <FormControl>
                             <Input
                               type="number"
                               className={cn(
                                 "pl-10 h-11 text-base rounded-lg",
-                                focusRingClass
+                                focusRingClass,
+                                inputBaseClass
                               )}
                               placeholder="0"
                               {...field}
@@ -1292,17 +1290,18 @@ export default function EditRoomForm({
                     name="floor_number"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+                        <FormLabel className="text-[0.9375rem] text-[#667085] dark:text-[#98A2B3] font-medium">
                           Floor Number
                         </FormLabel>
                         <div className="relative">
-                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-[#5D636E]" />
                           <FormControl>
                             <Input
                               type="number"
                               className={cn(
                                 "pl-10 h-11 text-base rounded-lg",
-                                focusRingClass
+                                focusRingClass,
+                                inputBaseClass
                               )}
                               placeholder="0"
                               {...field}
@@ -1319,7 +1318,7 @@ export default function EditRoomForm({
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[0.9375rem] text-[#667085] font-medium">
+                      <FormLabel className="text-[0.9375rem] text-[#667085] dark:text-[#98A2B3] font-medium">
                         Description
                       </FormLabel>
                       <FormControl>
@@ -1327,7 +1326,8 @@ export default function EditRoomForm({
                           placeholder="Provide a detailed description of the room and its features..."
                           className={cn(
                             "min-h-[120px] text-base resize-none rounded-lg",
-                            focusRingClass
+                            focusRingClass,
+                            inputBaseClass
                           )}
                           {...field}
                         />
@@ -1338,7 +1338,7 @@ export default function EditRoomForm({
                 />
               </div>
 
-              <Separator />
+              <Separator className="dark:bg-[#1D2939]" />
 
               <div className="space-y-6">
                 <FormField
@@ -1346,13 +1346,13 @@ export default function EditRoomForm({
                   name="room_amenities"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xl font-semibold text-[#1D2939]">
+                      <FormLabel className="text-xl font-semibold text-[#1D2939] dark:text-[#D0D5DD]">
                         Room Amenities
                       </FormLabel>
                       {isLoadingAmenities ? (
                         <div className="flex items-center gap-2 py-8">
                           <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                          <p className="text-base text-[#667085]">
+                          <p className="text-base text-[#667085] dark:text-[#98A2B3]">
                             Loading amenities...
                           </p>
                         </div>
@@ -1384,8 +1384,8 @@ export default function EditRoomForm({
                                   className={cn(
                                     "flex flex-wrap items-center justify-center text-center px-4 py-2.5 rounded-lg border-2 font-medium cursor-pointer transition-all text-[13px]",
                                     isChecked
-                                      ? "bg-gradient-to-r from-[#EFF6FF] to-blue-50 text-blue-600 border border-blue-300 shadow-xs rounded-full"
-                                      : "bg-white border border-[#E4E7EC] text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-full shadow-xs"
+                                      ? "bg-gradient-to-r from-[#EFF6FF] to-blue-50 text-blue-600 border border-blue-300 shadow-xs rounded-full dark:bg-[#162142] dark:border-none dark:text-blue-600"
+                                      : "bg-white border border-[#E4E7EC] text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-full shadow-xs dark:bg-[#101828] dark:border-[#1D2939] dark:text-[#D0D5DD] dark:hover:bg-[#1C2433]"
                                   )}
                                 >
                                   {amenity.name}
@@ -1403,10 +1403,10 @@ export default function EditRoomForm({
             </div>
           </div>
 
-          <SheetFooter className="flex-shrink-0 px-6 shadow-lg py-4 border-t bg-white">
+          <SheetFooter className="flex-shrink-0 px-6 shadow-lg py-4 border-t bg-white dark:bg-[#101828] dark:border-t-[#1D2939]">
             <div className="flex items-center justify-end gap-3 w-full">
               <button
-                className="bg-blue-600 hover:bg-blue-700 text-[#FFF] flex items-center gap-x-2 py-2.5 px-4 rounded-full text-[1rem] cursor-pointer transition-all focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2"
+                className="bg-blue-600 hover:bg-blue-700 text-[#FFF] flex items-center gap-x-2 py-2.5 px-4 rounded-full text-[1rem] cursor-pointer transition-all focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={updateRoomMutation.isPending || !isDirty}
               >
@@ -1420,7 +1420,7 @@ export default function EditRoomForm({
               <SheetClose asChild>
                 <button
                   type="button"
-                  className="border border-[#E4E7EC] hover:bg-gray-50 rounded-full py-2.5 px-4 text-[1rem] cursor-pointer transition-all focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2"
+                  className="border border-[#E4E7EC] dark:border-[#1D2939] bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-[#1C2433] rounded-full py-2.5 px-4 text-[1rem] cursor-pointer transition-all focus-visible:ring-blue-500 focus-visible:ring-2 focus-visible:ring-offset-2 text-gray-800 dark:text-gray-200"
                   data-sheet-close="true"
                 >
                   Cancel
