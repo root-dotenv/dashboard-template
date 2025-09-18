@@ -1796,7 +1796,10 @@ export default function RoomDetailsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>No, keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDiscardChanges}>
+            <AlertDialogAction
+              className="cursor-pointer bg-blue-600 hover:bg-blue-700 transition-all"
+              onClick={handleDiscardChanges}
+            >
               Yes, discard changes
             </AlertDialogAction>
           </AlertDialogFooter>
