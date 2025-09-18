@@ -34,11 +34,11 @@ export const navData = {
       items: [
         { title: "New Booking", url: "/bookings/new-booking", icon: Circle },
         { title: "All Bookings", url: "/bookings/all-bookings", icon: Circle },
-        {
-          title: "SafariPro Bookings",
-          url: "/bookings/safaripro-bookings",
-          icon: Circle,
-        },
+        // {
+        //   title: "SafariPro Bookings",
+        //   url: "/bookings/safaripro-bookings",
+        //   icon: Circle,
+        // },
       ],
     },
     {

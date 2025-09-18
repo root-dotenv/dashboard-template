@@ -947,7 +947,6 @@ export default function HotelRooms() {
                 ))}
               </TableHeader>
               <TableBody className="pt-4">
-                {" "}
                 {/* Added gap between header and body */}
                 {isLoading ? (
                   <TableRow>
