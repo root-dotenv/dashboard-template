@@ -8,7 +8,7 @@ import { Navigate, Outlet } from "react-router-dom";
  */
 export const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
-  return !isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 /**
@@ -17,5 +17,5 @@ export const ProtectedRoute = () => {
  */
 export const PublicRoute = () => {
   const { isAuthenticated } = useAuthStore();
-  return !isAuthenticated ? <Navigate to="/" replace /> : <Outlet />;
+  return isAuthenticated ? <Navigate to="/" replace /> : <Outlet />;
 };

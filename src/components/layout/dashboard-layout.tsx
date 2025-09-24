@@ -6,7 +6,10 @@ import { Outlet } from "react-router-dom";
 export default function DashboardLayout() {
   return (
     // Updated dark mode styles for the main wrapper
-    <div className="flex h-screen w-full bg-white dark:bg-[#101828]">
+    <div
+      className="flex h-screen max-h-screen w-full sticky top-0
+    left-0 bg-white dark:bg-[#101828] "
+    >
       <AppSidebar />
       {/* Updated dark mode styles for the content area */}
       <div className="flex flex-1 flex-col bg-[#FFF] dark:bg-[#101828]">

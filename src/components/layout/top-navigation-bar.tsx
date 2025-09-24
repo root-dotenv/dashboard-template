@@ -20,7 +20,7 @@ export function TopNavigationBar() {
   const { toggleSidebar } = useSidebarStore();
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-[#FFF] px-4 md:px-6 dark:bg-[#101828] dark:border-[#1D2939]">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b shadow-md bg-[#FFF] px-4 md:px-6 dark:bg-[#101828] dark:border-[#1D2939]">
       <div className="flex items-center gap-4">
         <button onClick={toggleSidebar} className="p-2">
           <TbLayoutSidebarLeftCollapse className="h-5 w-5 text-gray-500 dark:text-[#D0D5DD]" />

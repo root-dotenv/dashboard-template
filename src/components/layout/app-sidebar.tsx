@@ -45,18 +45,22 @@ const NavItem = ({
 
   if (hasChildren) {
     return (
-      <Collapsible open={isOpen && !isCollapsed} onOpenChange={onToggle}>
+      <Collapsible
+        className="z-40"
+        open={isOpen && !isCollapsed}
+        onOpenChange={onToggle}
+      >
         <CollapsibleTrigger
           disabled={isCollapsed}
           className={cn(
-            "flex w-full items-center rounded-lg p-2 transition-colors duration-200",
+            "flex w-full items-center rounded-lg z-40 p-2 transition-colors duration-200",
             isCollapsed ? "justify-center" : "justify-between",
             isActive
-              ? "bg-blue-50 text-blue-700 dark:bg-[#162142] dark:text-[#7592FF]"
-              : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433] dark:text-[#7592FF]"
+              ? "bg-blue-50 text-blue-700 dark:bg-[#162142] dark:text-[#7592FF] z-40"
+              : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433] dark:text-[#7592FF] z-40"
           )}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 z-40">
             <item.icon
               className={cn(
                 "h-5 w-5",
@@ -83,8 +87,8 @@ const NavItem = ({
             </>
           )}
         </CollapsibleTrigger>
-        <CollapsibleContent className="py-1 pl-6">
-          <div className="flex flex-col space-y-1">
+        <CollapsibleContent className="py-1 pl-6 z-40">
+          <div className="flex flex-col space-y-1 z-40">
             {item.items.map((child: any) => {
               const isChildActive = isLinkActive(child.url);
               return (
@@ -120,14 +124,14 @@ const NavItem = ({
     <Link
       to={item.url}
       className={cn(
-        "flex w-full items-center rounded-lg p-2 transition-colors duration-200",
+        "flex w-full items-center rounded-lg p-2 transition-colors z-40 duration-200",
         isCollapsed ? "justify-center" : "justify-between",
         isActive
-          ? "bg-blue-50 text-blue-700 font-semibold dark:bg-[#162142]"
-          : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433]"
+          ? "bg-blue-50 text-blue-700 font-semibold dark:bg-[#162142] z-40"
+          : "text-gray-600 hover:bg-gray-100 dark:hover:bg-[#1C2433] z-40"
       )}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 z-40">
         <item.icon
           className={cn(
             "h-5 w-5",
@@ -167,7 +171,7 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col h-screen bg-[#FFF] border-r border-[#E4E7EC] transition-all duration-300 dark:bg-[#101828] dark:border-[#1D2939]",
+        "hidden md:flex flex-col max-h-screen h-screen bg-[#FFF] border-r border-[#E4E7EC] transition-all duration-300 dark:bg-[#101828] dark:border-[#1D2939] sticky top-0 left-0 z-40",
         isCollapsed ? "w-20" : "w-68"
       )}
     >

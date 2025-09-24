@@ -4,15 +4,28 @@ import { createBrowserRouter, Outlet } from "react-router-dom";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import MainHomePage from "@/pages/main-homepage";
 import PlaceholderPage from "@/pages/placeholder-page";
-import Login from "@/pages/authentication/login";
 import OtpVerify from "@/pages/authentication/otp-verify";
-import Signup from "@/pages/authentication/signup";
-
-// Import the route protectors
 import { ProtectedRoute, PublicRoute } from "./protected-routes";
 import HotelRooms from "@/pages/rooms/hotel-rooms";
 import RoomDetailsPage from "@/pages/rooms/room-details";
 import AllBookings from "@/pages/bookings/all-bookings";
+import AvailableRoomsByDate from "@/pages/rooms/available-rooms-date";
+import AllocateRooms from "@/pages/rooms/allocate-rooms";
+import AllocationDetailsPage from "@/pages/rooms/allocation-details-page";
+import NewRoom from "@/pages/rooms/new-room";
+import RoomTypesTabController from "@/pages/rooms/room-types/RoomTypesTabController";
+import AuthenticationPage from "@/pages/authentication/authentication-page";
+import MakeBookingPage from "@/pages/bookings/make-booking";
+import BookingDetailsPage from "@/pages/bookings/booking-details";
+import CheckedInGuests from "@/pages/reservation/checked-in";
+import CheckedOutGuests from "@/pages/reservation/checked-out";
+import SpecialRequests from "@/pages/reservation/special-requests";
+import HotelFeaturesLayout from "@/pages/hotel-features/hotel-features";
+import HotelDepartments from "@/pages/inventory/hotel-departments";
+import InventoryItems from "@/pages/inventory/inventory-items";
+import InventoryCategories from "@/pages/inventory/inventory-categories";
+import EventSpaces from "@/pages/inventory/event-spaces";
+import EventSpaceTypes from "@/pages/inventory/event-space-types";
 
 const RootLayout = () => {
   return (
@@ -27,16 +40,20 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <p>Error page</p>,
     children: [
-      // --- Public Routes (No Dashboard Layout) ---
       {
         element: <PublicRoute />,
         children: [
-          { path: "/login", element: <Login /> },
-          { path: "/signup", element: <Signup /> },
+          {
+            path: "/login",
+            element: <AuthenticationPage defaultTab="login" />,
+          },
+          {
+            path: "/signup",
+            element: <AuthenticationPage defaultTab="signup" />,
+          },
           { path: "/otp-verify", element: <OtpVerify /> },
         ],
       },
-      // --- Protected Routes (With Dashboard Layout) ---
       {
         element: <ProtectedRoute />,
         children: [
@@ -47,9 +64,57 @@ export const router = createBrowserRouter([
               { index: true, element: <MainHomePage /> },
               { path: "profile", element: <PlaceholderPage /> },
               { path: "hotel/hotel-details", element: <PlaceholderPage /> },
+              { path: "bookings/new-booking", element: <MakeBookingPage /> },
+
+              { path: "bookings/:booking_id", element: <BookingDetailsPage /> },
+
               { path: "rooms/hotel-rooms", element: <HotelRooms /> },
+              {
+                path: "rooms/available-rooms-by-date",
+                element: <AvailableRoomsByDate />,
+              },
               { path: "rooms/:room_id", element: <RoomDetailsPage /> },
+              { path: "rooms/allocate-rooms", element: <AllocateRooms /> },
+              {
+                path: "rooms/allocations/:allocation_id",
+                element: <AllocationDetailsPage />,
+              },
+              {
+                path: "rooms/new-room",
+                element: <NewRoom />,
+              },
+              { path: "rooms/room-types", element: <RoomTypesTabController /> },
               { path: "bookings/all-bookings", element: <AllBookings /> },
+              { path: "reservations/checkin", element: <CheckedInGuests /> },
+              { path: "reservations/checkout", element: <CheckedOutGuests /> },
+              {
+                path: "reservations/special-requests",
+                element: <SpecialRequests />,
+              },
+              {
+                path: "hotel/hotel-features",
+                element: <HotelFeaturesLayout />,
+              },
+              {
+                path: "house-keeping/departments",
+                element: <HotelDepartments />,
+              },
+              {
+                path: "house-keeping/inventory-categories",
+                element: <InventoryItems />,
+              },
+              {
+                path: "house-keeping/inventory-items",
+                element: <InventoryCategories />,
+              },
+              {
+                path: "house-keeping/event-space-types",
+                element: <EventSpaceTypes />,
+              },
+              {
+                path: "house-keeping/event-spaces",
+                element: <EventSpaces />,
+              },
             ],
           },
         ],

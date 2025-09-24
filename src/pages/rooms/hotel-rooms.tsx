@@ -629,9 +629,9 @@ export default function HotelRooms() {
   return (
     <div className="flex-1 space-y-6 bg-gray-50 dark:bg-[#101828]">
       <Card className="border-none p-0 bg-[#FFF] dark:bg-[#171F2F] rounded-none shadow-none">
-        <CardHeader className="bg-textured-blue shadow-none text-[#FFF] p-6">
+        <CardHeader className="bg-white/80 dark:bg-[#101828]/80 backdrop-blur-sm border-b border-gray-200 dark:border-[#1D2939] sticky top-0 z-30 mb-4 pt-4">
           <h2 className="text-[1.5rem] font-bold tracking-wide">Hotel Rooms</h2>
-          <CardDescription className="text-[#FFF] shadow-none text-[1rem] mt-1">
+          <CardDescription className="text-[0.9375rem] text-gray-600 dark:text-[#98A2B3] mt-1">
             Manage and view all rooms with ease.
           </CardDescription>
         </CardHeader>

@@ -10,27 +10,27 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+          "cursor-pointer bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "cursor-pointer bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "cursor-pointer border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "cursor-pointer bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "cursor-pointer hover:bg-transparent hover:text-accent-foreground dark:hover:bg-transparent",
         link: "text-primary underline-offset-4 hover:underline",
         //  - - - custom themed "button variant"
-        main: "bg-[#465FFF] hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-[6px] border-none text-[0.9375rem] cursor-pointer",
+        main: "cursor-pointer bg-blue-600 hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-[6px] border-none text-[0.9375rem] cursor-pointer",
         //  - - - available custom themed "button variant"
         available:
-          "bg-[#039855] hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
+          "cursor-pointer bg-[#039855] hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
         //  - - - booked custom themed "button variant"
         booked:
-          "bg-yellow-600 hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
+          "cursor-pointer bg-yellow-600 hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
         //  - - - maintenance custom themed "button variant"
         maintenance:
-          "bg-red-500 hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
+          "cursor-pointer bg-red-500 hover:[#3641F5] text-[#FFF] leading-[20px] flex items-center justify-center font-medium rounded-full text-[0.9375rem] cursor-pointer",
       },
 
       size: {

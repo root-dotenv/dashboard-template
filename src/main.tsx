@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import "./index.css";
 import { HotelProvider } from "./providers/hotel-provider";
+import { Toaster } from "sonner";
 
 const queryClient = new QueryClient();
 
@@ -14,6 +15,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <HotelProvider>
         <App />
+        <Toaster position="top-center" richColors />
       </HotelProvider>
     </QueryClientProvider>
   </React.StrictMode>

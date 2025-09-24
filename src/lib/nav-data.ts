@@ -34,11 +34,6 @@ export const navData = {
       items: [
         { title: "New Booking", url: "/bookings/new-booking", icon: Circle },
         { title: "All Bookings", url: "/bookings/all-bookings", icon: Circle },
-        // {
-        //   title: "SafariPro Bookings",
-        //   url: "/bookings/safaripro-bookings",
-        //   icon: Circle,
-        // },
       ],
     },
     {
@@ -53,8 +48,11 @@ export const navData = {
           url: "/rooms/available-rooms-by-date",
           icon: Circle,
         },
-        { title: "Allocate Rooms", url: "/rooms/allocate-rooms", icon: Circle },
-        { title: "Allocations", url: "/rooms/rooms-allocations", icon: Circle },
+        {
+          title: "Room Allocations",
+          url: "/rooms/allocate-rooms",
+          icon: Circle,
+        },
       ],
     },
     {
@@ -119,6 +117,10 @@ export const navData = {
       icon: HiOutlineDocumentReport,
       url: "/reports",
     },
-    { title: "Support", icon: BiSupport, url: "/support" },
+    {
+      title: "Support",
+      icon: BiSupport,
+      url: "https://web.safaripro.net/privacy-policy/support",
+    },
   ],
 };
