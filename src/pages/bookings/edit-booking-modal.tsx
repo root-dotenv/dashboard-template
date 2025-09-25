@@ -1,13 +1,13 @@
-// --- src/pages/hotels/edit-booking-modal.tsx
-import { useState } from "react";
+"use client";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { Loader2, Mail, MapPin, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -16,32 +16,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+  SheetClose,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
-  FormField as HookFormField, // Renamed to avoid conflict with custom FormField
+  FormField as HookFormField,
+  FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import {
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaCalendarCheck,
-} from "react-icons/fa";
-import { NotesSummary } from "../onboarding/notes-summary";
-import { FormField } from "../onboarding/form-field";
+import { Input } from "@/components/custom/InputCustom";
 
 // --- Type Definitions ---
 interface Booking {
@@ -59,9 +51,10 @@ interface Booking {
   [key: string]: any;
 }
 
-interface EditBookingModalProps {
+interface EditBookingFormProps {
   booking: Booking;
-  onClose: () => void;
+  onUpdateComplete: () => void;
+  onDirtyChange: (isDirty: boolean) => void;
 }
 
 const schema = yup.object().shape({
@@ -80,12 +73,12 @@ const schema = yup.object().shape({
   service_notes: yup.string().nullable(),
 });
 
-export default function EditBookingModal({
+export default function EditBookingForm({
   booking,
-  onClose,
-}: EditBookingModalProps) {
+  onUpdateComplete,
+  onDirtyChange,
+}: EditBookingFormProps) {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [isCheckoutRequested, setIsCheckoutRequested] = useState(false);
 
   const form = useForm<Partial<Booking>>({
@@ -99,78 +92,66 @@ export default function EditBookingModal({
       special_requests: booking.special_requests || "",
       service_notes: booking.service_notes || "",
     },
+    mode: "onChange",
   });
 
-  const BOOKING_BASE_URL = import.meta.env.VITE_BOOKING_BASE_URL;
+  const {
+    formState: { isDirty, dirtyFields },
+  } = form;
+
+  useEffect(() => {
+    onDirtyChange(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  const BOOKING_BASE_URL = "http://booking.safaripro.net/api/v1/";
 
   const updateBookingMutation = useMutation({
     mutationFn: (updatedData: Partial<Booking>) =>
       axios.patch(`${BOOKING_BASE_URL}bookings/${booking.id}`, updatedData),
     onSuccess: () => {
-      toast({
-        title: "Success!",
-        description: "Booking details have been updated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["allBookings"] });
+      toast.success("Booking details have been updated successfully.");
       queryClient.invalidateQueries({
         queryKey: ["bookingDetails", booking.id],
       });
-      onClose();
+      onUpdateComplete();
     },
-    onError: (error) =>
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description:
-          error instanceof Error ? error.message : "An unknown error occurred.",
-      }),
+    onError: (error: any) =>
+      toast.error(
+        `Update Failed: ${error.response?.data?.detail || error.message}`
+      ),
   });
 
   const checkOutMutation = useMutation({
     mutationFn: () =>
       axios.post(`${BOOKING_BASE_URL}bookings/${booking.id}/check_out`),
     onSuccess: () => {
-      toast({
-        title: "Success!",
-        description: "Guest has been checked out successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["allBookings"] });
+      toast.success("Guest has been checked out successfully.");
       queryClient.invalidateQueries({
         queryKey: ["bookingDetails", booking.id],
       });
-      onClose();
+      onUpdateComplete();
     },
-    onError: (error) =>
-      toast({
-        variant: "destructive",
-        title: "Check-out Failed",
-        description:
-          error instanceof Error ? error.message : "An unknown error occurred.",
-      }),
+    onError: (error: any) =>
+      toast.error(
+        `Check-out Failed: ${error.response?.data?.detail || error.message}`
+      ),
   });
 
   const onUpdateSubmit = (data: Partial<Booking>) => {
-    const changedData: { [key: string]: any } = {};
-    Object.keys(data).forEach((keyStr) => {
-      const key = keyStr as keyof Partial<Booking>;
-      const originalValue = booking[key] === null ? "" : booking[key];
-      const formValue = data[key] === null ? "" : data[key];
+    const changedData: Partial<Booking> = {};
 
-      if (String(originalValue) !== String(formValue)) {
-        changedData[key] = data[key];
-      }
+    // Iterate over the keys of dirtyFields, which contains only the changed fields
+    Object.keys(dirtyFields).forEach((key) => {
+      const fieldName = key as keyof Partial<Booking>;
+      changedData[fieldName] = data[fieldName];
     });
 
     if (Object.keys(changedData).length === 0) {
-      toast({
-        title: "No Changes",
-        description: "No details were modified.",
-      });
-      onClose();
+      toast.info("No changes were made.");
+      onUpdateComplete();
       return;
     }
 
-    console.log("Data being sent to the backend:", changedData);
     updateBookingMutation.mutate(changedData);
   };
 
@@ -184,272 +165,238 @@ export default function EditBookingModal({
     updateBookingMutation.isPending || checkOutMutation.isPending;
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="flex flex-col gap-0 p-0 sm:max-w-[680px] sm:max-h-[90vh] bg-white rounded-md shadow-md">
-        {/* Added bg-white, rounded-lg, shadow-lg */}
-        <DialogHeader className="px-6 py-4 border-b border-gray-200">
-          {/* Added border-gray-200 */}
-          <DialogTitle className="text-xl font-bold text-gray-800">
-            Edit Booking with ID: {booking.code}
-          </DialogTitle>
-          <DialogDescription className="text-gray-600">
-            Make changes to the booking details or perform a check-out.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="overflow-y-auto px-6 py-4 space-y-6">
-          {" "}
-          {/* Added space-y-6 for vertical rhythm */}
-          <NotesSummary title="Important!">
-            <p>
-              Ensure all guest details are accurate. Updating these details
-              impacts how the booking is managed and communicated.
-            </p>
-          </NotesSummary>
-          <Form {...form}>
-            <form
-              id="edit-booking-form"
-              onSubmit={form.handleSubmit(onUpdateSubmit)}
-              className="space-y-6"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {" "}
-                {/* Adopted grid layout */}
+    <div className="flex flex-col h-full bg-[#FFF] dark:bg-[#101828]">
+      <SheetHeader className="px-6 pt-6 pb-4 border-b dark:border-b-[#1D2939]">
+        <SheetTitle className="text-2xl font-bold text-[#1D2939] dark:text-[#D0D5DD]">
+          Edit Booking: {booking.code}
+        </SheetTitle>
+        <SheetDescription className="text-base text-[#667085] dark:text-[#98A2B3]">
+          Make changes to the booking details or perform a check-out.
+        </SheetDescription>
+      </SheetHeader>
+      <Form {...form}>
+        <form
+          id="edit-booking-form"
+          onSubmit={form.handleSubmit(onUpdateSubmit)}
+          className="flex flex-col h-full min-h-0"
+        >
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold">Guest Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <HookFormField
                   control={form.control}
                   name="full_name"
                   render={({ field }) => (
-                    <FormField
-                      name={field.name}
-                      label="Full Name"
-                      icon={<FaUser size={16} />}
-                      required
-                    >
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g. John Doe" />
+                        <Input
+                          {...field}
+                          prefixIcon={
+                            <User className="h-4 w-4 text-gray-400" />
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
-                    </FormField>
+                    </FormItem>
                   )}
                 />
                 <HookFormField
                   control={form.control}
                   name="email"
                   render={({ field }) => (
-                    <FormField
-                      name={field.name}
-                      label="Email"
-                      icon={<FaEnvelope size={16} />}
-                      required
-                    >
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
                           {...field}
-                          placeholder="e.g. johndoe@example.com"
+                          prefixIcon={
+                            <Mail className="h-4 w-4 text-gray-400" />
+                          }
                         />
                       </FormControl>
                       <FormMessage />
-                    </FormField>
+                    </FormItem>
                   )}
                 />
                 <HookFormField
                   control={form.control}
                   name="phone_number"
                   render={({ field }) => (
-                    <FormField
-                      name={field.name}
-                      label="Phone Number"
-                      icon={<FaPhone size={16} />}
-                      required
-                    >
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
                       <FormControl>
                         <Input
                           type="tel"
                           {...field}
-                          placeholder="e.g. +255712345678"
-                          maxLength={13}
+                          prefixIcon={
+                            <Phone className="h-4 w-4 text-gray-400" />
+                          }
                         />
                       </FormControl>
                       <FormMessage />
-                    </FormField>
+                    </FormItem>
                   )}
                 />
                 <HookFormField
                   control={form.control}
-                  name="booking_status"
+                  name="address"
                   render={({ field }) => (
-                    <FormField
-                      name={field.name}
-                      label="Booking Status"
-                      icon={<FaCalendarCheck size={16} />} // Using as generic status icon
-                      required
-                    >
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Confirmed">Confirmed</SelectItem>
-                          <SelectItem value="Processing">Processing</SelectItem>
-                          <SelectItem value="Checked In">Checked In</SelectItem>
-                          <SelectItem value="Checked Out">
-                            Checked Out
-                          </SelectItem>
-                          <SelectItem value="Cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          prefixIcon={
+                            <MapPin className="h-4 w-4 text-gray-400" />
+                          }
+                        />
+                      </FormControl>
                       <FormMessage />
-                    </FormField>
+                    </FormItem>
                   )}
                 />
-                <div className="md:col-span-2">
-                  {" "}
-                  {/* Address field spans two columns */}
-                  <HookFormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormField
-                        name={field.name}
-                        label="Guest's Address"
-                        icon={<FaMapMarkerAlt size={16} />}
-                        required
-                      >
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="e.g. 123 Main St, City, Country"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormField>
-                    )}
-                  />
-                </div>
               </div>
+            </div>
 
-              <div className="space-y-4 pt-4">
-                {" "}
-                {/* Added padding top for spacing */}
-                <HookFormField
-                  control={form.control}
-                  name="special_requests"
-                  render={({ field }) => (
-                    <FormField
-                      name={field.name}
-                      label="Guest's Special Requests"
-                      icon={null}
+            <Separator />
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold">Booking Status</h3>
+              <HookFormField
+                control={form.control}
+                name="booking_status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
                     >
                       <FormControl>
-                        <Textarea
-                          placeholder="Notes about the guest's specific requests..."
-                          rows={3}
-                          {...field}
-                          value={field.value ?? ""}
-                        />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormField>
-                  )}
-                />
-                <HookFormField
-                  control={form.control}
-                  name="service_notes"
-                  render={({ field }) => (
-                    <FormField
-                      name={field.name}
-                      label="Special Service Notes"
-                      icon={null}
+                      <SelectContent>
+                        <SelectItem value="Confirmed">Confirmed</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Checked In">Checked In</SelectItem>
+                        <SelectItem value="Checked Out">Checked Out</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold">Notes & Requests</h3>
+              <HookFormField
+                control={form.control}
+                name="special_requests"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guest's Special Requests</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g., extra pillows, late check-in..."
+                        rows={3}
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <HookFormField
+                control={form.control}
+                name="service_notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Internal Service Notes</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g., VIP guest, anniversary celebration..."
+                        rows={3}
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {booking.checkin && !booking.checkout && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-red-600">
+                    Guest Check-out
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    This action will record the current time as the guest's
+                    departure and cannot be undone.
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="confirm-checkout"
+                      checked={isCheckoutRequested}
+                      onCheckedChange={(checked) =>
+                        setIsCheckoutRequested(checked as boolean)
+                      }
+                    />
+                    <label
+                      htmlFor="confirm-checkout"
+                      className="text-sm font-medium leading-none"
                     >
-                      <FormControl>
-                        <Textarea
-                          placeholder="Internal notes for staff..."
-                          rows={3} // Adjusted rows for better look
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormField>
-                  )}
-                />
-              </div>
-            </form>
-          </Form>
-          {booking.checkin && !booking.checkout && (
-            <>
-              {/* Added border color */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-gray-800 p-0 mb-1">
-                  Guest Check-out
-                </h3>
-                <Separator className="my-2 border-gray-200" />{" "}
-                <Alert className="border-none bg-none shadow-none p-0">
-                  {/* Styled Alert */}
-                  <AlertDescription className="text-gray-800 text-[1rem] font-medium">
-                    Checking out this guest will record the current time as
-                    their official departure time. This action cannot be undone.
-                  </AlertDescription>
-                </Alert>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="confirm-checkout"
-                    checked={isCheckoutRequested}
-                    onCheckedChange={(checked) =>
-                      setIsCheckoutRequested(checked as boolean)
-                    }
-                    className="border-[#DADCE0] border-[1.5px] data-[state=checked]:bg-[#0081FB] data-[state=checked]:text-[#FFF]"
-                  />
-                  <label
-                    htmlFor="confirm-checkout"
-                    className="text-[0.9375rem] font-medium leading-none text-gray-700"
+                      I confirm I want to check this guest out now.
+                    </label>
+                  </div>
+                  <Button
+                    onClick={handleCheckout}
+                    disabled={!isCheckoutRequested || isProcessing}
+                    className="w-full bg-red-600 hover:bg-red-700"
                   >
-                    I confirm I want to check this guest out now.
-                  </label>
+                    {checkOutMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Check Out Guest
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleCheckout}
-                  disabled={!isCheckoutRequested || isProcessing}
-                  className="w-full bg-[#0081FB] text-white hover:bg-blue-600 transition-all inter font-medium"
-                >
-                  {checkOutMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Check Out Now
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
-          {" "}
-          {/* Added border color */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="transition-all inter font-medium"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="edit-booking-form"
-            disabled={isProcessing}
-            className="bg-[#0081FB] text-white hover:bg-blue-600 transition-all inter font-medium"
-          >
-            {updateBookingMutation.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              </>
             )}
-            Update Details
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          </div>
+
+          <SheetFooter className="px-6 py-4 border-t dark:border-t-[#1D2939]">
+            <SheetClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </SheetClose>
+            <Button
+              type="submit"
+              form="edit-booking-form"
+              disabled={isProcessing || !isDirty}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {updateBookingMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Save Changes
+            </Button>
+          </SheetFooter>
+        </form>
+      </Form>
+    </div>
   );
 }

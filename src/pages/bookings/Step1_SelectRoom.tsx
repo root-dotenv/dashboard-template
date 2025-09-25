@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, differenceInDays } from "date-fns";
-import { type DateRange } from "react-day-picker";
 import { useBookingStore } from "@/store/booking.store";
 import { useHotel } from "@/providers/hotel-provider";
 import hotelClient from "@/api/hotel-client";
@@ -12,6 +11,7 @@ import {
 } from "./booking-types";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -23,7 +23,7 @@ import {
   AlertCircle,
   Bed,
   CalendarIcon,
-  CheckCircle, // For the checked state
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import RoomCard from "./room-card";
@@ -34,10 +34,8 @@ export default function Step1_SelectRoom() {
   const { startDate, endDate, setDates, setSelectedRoom, setStep } =
     useBookingStore();
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: startDate,
-    to: endDate,
-  });
+  const [checkinDate, setCheckinDate] = useState<Date | undefined>(startDate);
+  const [checkoutDate, setCheckoutDate] = useState<Date | undefined>(endDate);
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string | null>(
     null
   );
@@ -52,18 +50,18 @@ export default function Step1_SelectRoom() {
     queryKey: [
       "roomAvailabilitySearch",
       hotel?.id,
-      dateRange?.from,
-      dateRange?.to,
+      checkinDate,
+      checkoutDate,
       selectedRoomTypeId,
     ],
     queryFn: async () => {
-      if (!hotel?.id || !dateRange?.from || !dateRange?.to) {
+      if (!hotel?.id || !checkinDate || !checkoutDate) {
         throw new Error("A valid hotel and date range are required.");
       }
       const params = new URLSearchParams({
         hotel_id: hotel.id,
-        start_date: format(dateRange.from, "yyyy-MM-dd"),
-        end_date: format(dateRange.to, "yyyy-MM-dd"),
+        start_date: format(checkinDate, "yyyy-MM-dd"),
+        end_date: format(checkoutDate, "yyyy-MM-dd"),
       });
       if (selectedRoomTypeId) {
         params.append("room_type_id", selectedRoomTypeId);
@@ -73,16 +71,20 @@ export default function Step1_SelectRoom() {
       );
       return response.data;
     },
-    enabled: hasSearched && !!hotel?.id && !!dateRange?.from && !!dateRange?.to,
+    enabled: hasSearched && !!hotel?.id && !!checkinDate && !!checkoutDate,
     retry: 1,
   });
 
   const handleSearch = () => {
-    if (!dateRange?.from || !dateRange?.to) {
-      toast.error("Please select both a start and end date.");
+    if (!checkinDate || !checkoutDate) {
+      toast.error("Please select both a check-in and check-out date.");
       return;
     }
-    setDates({ start: dateRange.from, end: dateRange.to });
+    if (checkoutDate <= checkinDate) {
+      toast.error("Check-out date must be after the check-in date.");
+      return;
+    }
+    setDates({ start: checkinDate, end: checkoutDate });
     setHasSearched(true);
   };
 
@@ -99,52 +101,80 @@ export default function Step1_SelectRoom() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center gap-4 rounded-lg bg-none dark:bg-gray-900/50">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full sm:w-[280px] justify-start text-left font-normal",
-                !dateRange && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, "LLL dd, y")} -{" "}
-                    {format(dateRange.to, "LLL dd, y")}
-                  </>
+      <div className="flex flex-col sm:flex-row items-end gap-4 rounded-lg bg-none dark:bg-gray-900/50">
+        <div className="grid gap-2 w-full">
+          <Label htmlFor="start-date">Check-in Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="start-date"
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !checkinDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {checkinDate ? (
+                  format(checkinDate, "PPP")
                 ) : (
-                  format(dateRange.from, "LLL dd, y")
-                )
-              ) : (
-                <span>Pick a date range</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={dateRange?.from}
-              selected={dateRange}
-              onSelect={setDateRange}
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={checkinDate}
+                onSelect={setCheckinDate}
+                disabled={(date) =>
+                  date < new Date(new Date().setHours(0, 0, 0, 0))
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="grid gap-2 w-full">
+          <Label htmlFor="end-date">Check-out Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="end-date"
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !checkoutDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {checkoutDate ? (
+                  format(checkoutDate, "PPP")
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={checkoutDate}
+                onSelect={setCheckoutDate}
+                disabled={(date) =>
+                  checkinDate ? date <= checkinDate : date < new Date()
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
         <Button
-          variant={"main"}
           onClick={handleSearch}
           disabled={isFetching}
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
         >
-          {isFetching && hasSearched ? (
+          {isFetching && hasSearched && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            " "
           )}
           Find Available Rooms
         </Button>
@@ -158,18 +188,16 @@ export default function Step1_SelectRoom() {
         </div>
       )}
 
-      {/* Show results only after the first search has been initiated */}
       {hasSearched && (
         <div>
           <div className="w-full flex flex-col lg:flex-row gap-8 items-start">
-            {/* --- Filters Column --- */}
-            <div className="w-full sticky left-0 right-0 top-16 lg:w-64 flex-shrink-0 p-4 border rounded-md bg-[#FFFFFF] dark:bg-gray-800 dark:border-gray-700">
+            <div className="w-full lg:w-64 flex-shrink-0 p-4 border rounded-md bg-[#FFFFFF] dark:bg-gray-800 dark:border-gray-700 lg:sticky lg:top-36">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">Filter by Room Type</h3>
                 {selectedRoomTypeId && (
                   <Button
                     variant="link"
-                    className="h-auto p-0 text-[0.9375rem] text-blue-600 cursor-pointer dark:text-blue-400"
+                    className="h-auto p-0 text-sm text-blue-600 cursor-pointer dark:text-blue-400"
                     onClick={() => setSelectedRoomTypeId(null)}
                   >
                     Clear
@@ -198,17 +226,16 @@ export default function Step1_SelectRoom() {
                     )}
                     <span
                       className={cn(
-                        "text-base",
+                        "text-sm",
                         selectedRoomTypeId === type.id
                           ? "font-medium text-blue-800 dark:text-blue-200"
-                          : "text-[#10294D] dark:text-gray-200"
+                          : "text-gray-700 dark:text-gray-200"
                       )}
                     >
                       {type.name}
                     </span>
                   </div>
                 ))}
-                {/* Fallback for no room types or specific "All" option if desired */}
                 {hotel?.room_type.length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     No room types available.
@@ -217,7 +244,6 @@ export default function Step1_SelectRoom() {
               </div>
             </div>
 
-            {/* --- Room Cards Column --- */}
             <div className="flex-1 w-full">
               {isFetching ? (
                 <div className="flex justify-center items-center py-16">
@@ -230,10 +256,9 @@ export default function Step1_SelectRoom() {
                   </h3>
                   {fullyAvailableRooms.map((room) => {
                     const duration =
-                      dateRange?.from && dateRange?.to
-                        ? differenceInDays(dateRange.to, dateRange.from) || 1
+                      checkinDate && checkoutDate
+                        ? differenceInDays(checkoutDate, checkinDate) || 1
                         : 1;
-
                     return (
                       <RoomCard
                         key={room.room_id}

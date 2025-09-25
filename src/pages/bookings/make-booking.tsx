@@ -1,18 +1,14 @@
-// src/pages/bookings/make-booking.tsx
 "use client";
-
 import { useBookingStore } from "@/store/booking.store";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
-
-// Replacing placeholders with the actual, functional components
 import Step1_SelectRoom from "./Step1_SelectRoom";
 import Step2_GuestDetails from "./Step2_GuestDetails";
 import Step3_ConfirmBooking from "./Step3_ConfirmBooking";
 import Step4_ReceivePayment from "./Step4_ReceivePayment";
 import Step5_CheckInAndFinish from "./Step5_CheckInAndFinish";
 
-// Stepper UI Component
+// Redesigned Stepper UI Component
 const BookingStepper = ({ currentStep }: { currentStep: number }) => {
   const steps = [
     "Select Room",
@@ -24,80 +20,65 @@ const BookingStepper = ({ currentStep }: { currentStep: number }) => {
 
   return (
     <nav aria-label="Progress">
-      <ol
-        role="list"
-        className="flex items-center border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700 md:divide-y-0 md:divide-x"
-      >
+      <ol role="list" className="flex items-center">
         {steps.map((step, index) => {
           const stepNumber = index + 1;
           const isCompleted = currentStep > stepNumber;
           const isCurrent = currentStep === stepNumber;
 
           return (
-            <li key={step} className="relative flex-1 flex">
-              <div
-                className={cn(
-                  "group flex items-center w-full transition-colors",
-                  isCurrent || isCompleted ? "cursor-pointer" : "cursor-default"
-                )}
-              >
-                <span className="px-6 py-4 flex items-center text-sm font-medium">
-                  <span
-                    className={cn(
-                      "flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full",
-                      isCompleted
-                        ? "bg-blue-600"
-                        : isCurrent
-                        ? "border-2 border-blue-600 bg-white dark:bg-gray-800"
-                        : "border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
-                    )}
+            <li
+              key={step}
+              className={cn(
+                "relative flex-1",
+                index !== steps.length - 1 ? "pr-8 sm:pr-20" : ""
+              )}
+            >
+              {isCompleted ? (
+                <>
+                  <div
+                    className="absolute inset-0 flex items-center"
+                    aria-hidden="true"
                   >
-                    {isCompleted ? (
-                      <Check className="w-6 h-6 text-white" />
-                    ) : (
-                      <span
-                        className={cn(
-                          "text-gray-500",
-                          isCurrent && "text-blue-600"
-                        )}
-                      >
-                        0{stepNumber}
-                      </span>
-                    )}
-                  </span>
-                  <span
-                    className={cn(
-                      "ml-4 text-sm font-medium",
-                      isCurrent
-                        ? "text-blue-600"
-                        : "text-gray-500 dark:text-gray-400"
-                    )}
+                    <div className="h-0.5 w-full bg-blue-600" />
+                  </div>
+                  <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-blue-600">
+                    <Check className="h-5 w-5 text-white" />
+                  </div>
+                </>
+              ) : isCurrent ? (
+                <>
+                  <div
+                    className="absolute inset-0 flex items-center"
+                    aria-hidden="true"
                   >
-                    {step}
-                  </span>
-                </span>
-              </div>
-
-              {index !== steps.length - 1 ? (
-                <div
-                  className="hidden md:block absolute top-0 right-0 h-full w-5"
-                  aria-hidden="true"
+                    <div className="h-0.5 w-full bg-gray-200" />
+                  </div>
+                  <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-blue-600 bg-white dark:bg-gray-800">
+                    <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div
+                    className="absolute inset-0 flex items-center"
+                    aria-hidden="true"
+                  >
+                    <div className="h-0.5 w-full bg-gray-200" />
+                  </div>
+                  <div className="group relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-white dark:bg-gray-800" />
+                </>
+              )}
+              <div className="absolute top-10">
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    isCurrent ? "text-blue-600" : "text-gray-500"
+                  )}
                 >
-                  <svg
-                    className="h-full w-full text-gray-300 dark:text-gray-600"
-                    viewBox="0 0 22 80"
-                    fill="none"
-                    preserveAspectRatio="none"
-                  >
-                    <path
-                      d="M0 -2L20 40L0 82"
-                      vectorEffect="non-scaling-stroke"
-                      stroke="currentcolor"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              ) : null}
+                  {step}
+                </p>
+              </div>
             </li>
           );
         })}
@@ -127,20 +108,29 @@ export default function MakeBookingPage() {
   };
 
   return (
-    <div className="flex-1 space-y-6 bg-[#F6F7FA] dark:bg-[#101828] p-6">
-      <div className="bg-white dark:bg-[#171F2F] p-6 rounded-lg shadow-sm border border-gray-200 dark:border-[#1D2939]">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Create New Booking
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Follow the steps below to create a new physical booking for a guest.
-        </p>
-        <BookingStepper currentStep={step} />
+    <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#101828]">
+      <div className="bg-white/80 dark:bg-[#101828]/80 backdrop-blur-sm border-b border-gray-200 dark:border-[#1D2939] sticky top-0 z-30">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4 py-6">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-[#D0D5DD]">
+                Create New Booking
+              </h1>
+              <p className="text-gray-600 dark:text-[#98A2B3]">
+                Follow the steps to create a new physical booking for a guest.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div className="bg-none min-h-screen dark:bg-[#171F2F] p-4 rounded-lg shadow-none border-none">
-        {renderStep()}
-      </div>
+      <main className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-transparent shadow-none p-6 border-transparent mb-8">
+          <BookingStepper currentStep={step} />
+        </div>
+        <div className="bg-transparent dark:bg-transparent rounded-lg">
+          {renderStep()}
+        </div>
+      </main>
     </div>
   );
 }

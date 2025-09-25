@@ -1,4 +1,3 @@
-// - - - src/pages/hotels/booking-details.tsx
 "use client";
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -6,37 +5,35 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
 import {
-  FaEnvelope,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaCreditCard,
-  FaDesktop,
-  FaBed,
-  FaClock,
-  FaUsers,
-  FaTimes,
-} from "react-icons/fa";
-import {
-  FaCalendarCheck,
-  FaCalendarXmark,
-  FaRegCircleCheck,
-} from "react-icons/fa6";
-import { BiPrinter } from "react-icons/bi";
-import { TbChevronsLeft } from "react-icons/tb";
+  ArrowLeft,
+  CalendarCheck,
+  Clock,
+  FilePenLine,
+  Mail,
+  MapPin,
+  Phone,
+  Printer,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import EditBookingModal from "./edit-booking-modal";
-import { BedDouble } from "lucide-react";
-import { FiEdit2 } from "react-icons/fi";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { toTitleCase } from "@/utils/capitalize";
+import { toTitleCase } from "../../utils/capitalize";
+import BookingPrintTicket from "./booking-ticket";
+import { cn } from "@/lib/utils";
+import EditBookingForm from "./edit-booking-modal";
 
 // --- TYPE DEFINITIONS ---
 interface Booking {
@@ -83,60 +80,67 @@ interface RoomDetails {
   amenities: Amenity[];
 }
 
-// --- HELPER COMPONENTS ---
-const BookingStatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  let statusClasses = "";
-  switch (status?.toLowerCase()) {
-    case "confirmed":
-    case "checked in":
-      statusClasses = "bg-green-100 text-green-800 border-green-200";
-      break;
-    case "pending":
-      statusClasses = "bg-yellow-100 text-yellow-800 border-yellow-200";
-      break;
-    case "cancelled":
-      statusClasses = "bg-red-100 text-red-800 border-red-200";
-      break;
-    case "expired":
-      statusClasses = "bg-red-100 text-red-800 border-red-200";
-      break;
-    default:
-      statusClasses = "bg-gray-100 text-gray-800 border-gray-200";
-  }
-  return <Badge className={statusClasses}>{status}</Badge>;
+// --- HELPER COMPONENTS & CONFIG ---
+const InfoItem: React.FC<{
+  icon: React.ElementType;
+  label: string;
+  value: React.ReactNode;
+}> = ({ icon: Icon, label, value }) => (
+  <div className="flex items-center gap-4">
+    <div className="flex-shrink-0 p-2 bg-[#EFF6FF] dark:bg-[#162142] rounded-full">
+      <Icon className="h-5 w-5 text-blue-600 dark:text-[#7592FF]" />
+    </div>
+    <div>
+      <p className="text-sm text-gray-500 dark:text-[#98A2B3]">{label}</p>
+      <p className="font-semibold text-[#1D2939] dark:text-[#D0D5DD]">
+        {value}
+      </p>
+    </div>
+  </div>
+);
+
+const statusConfig = {
+  confirmed: "bg-green-100 text-green-800 border-green-200",
+  "checked in": "bg-blue-100 text-blue-800 border-blue-200",
+  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  cancelled: "bg-red-100 text-red-800 border-red-200",
+  expired: "bg-red-100 text-red-800 border-red-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+  default: "bg-gray-100 text-gray-800 border-gray-200",
 };
 
-const PaymentStatusLabel: React.FC<{ status: string }> = ({ status }) => {
-  const isCompleted = status?.toLowerCase().includes("paid");
-  const isPending = status?.toLowerCase().includes("pending");
-
+const getStatusClass = (status: string) => {
+  const lowerCaseStatus = status?.toLowerCase() || "default";
   return (
-    <Badge
-      variant={isCompleted ? "default" : isPending ? "secondary" : "outline"}
-      className={
-        isCompleted
-          ? "bg-green-100 text-green-800 border-green-200"
-          : isPending
-          ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-          : ""
-      }
-    >
-      {status}
-    </Badge>
+    statusConfig[lowerCaseStatus as keyof typeof statusConfig] ||
+    statusConfig.default
   );
 };
 
 export default function BookingDetailsPage() {
   const { booking_id } = useParams<{ booking_id: string }>();
   const navigate = useNavigate();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showPrintView, setShowPrintView] = useState(false);
-  const [fullscreenImageUrl, setFullscreenImageUrl] = useState<string | null>(
-    null
-  );
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] =
+    useState(false);
 
-  const HOTEL_BASE_URL = import.meta.env.VITE_HOTEL_BASE_URL;
-  const BOOKING_BASE_URL = import.meta.env.VITE_BOOKING_BASE_URL;
+  const handleSheetOpenChange = (open: boolean) => {
+    if (!open && isFormDirty) {
+      setShowUnsavedChangesDialog(true);
+      return;
+    }
+    setIsSheetOpen(open);
+  };
+
+  const handleDiscardChanges = () => {
+    setIsFormDirty(false);
+    setIsSheetOpen(false);
+  };
+
+  const HOTEL_BASE_URL = "http://hotel.safaripro.net/api/v1/";
+  const BOOKING_BASE_URL = "http://booking.safaripro.net/api/v1/";
 
   const {
     data: booking,
@@ -179,8 +183,8 @@ export default function BookingDetailsPage() {
 
   if (isLoadingBooking || isLoadingRoom) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#006DE4]"></div>
+      <div className="flex items-center justify-center h-screen bg-[#F9FAFB] dark:bg-[#101828]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -208,274 +212,204 @@ export default function BookingDetailsPage() {
   }
 
   return (
-    <>
-      <div className="bg-none min-h-screen p-4 md:p-4 lg:p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex justify-between items-center">
-            <Button
-              className="ml-1"
-              variant="outline"
-              onClick={() => navigate(-1)}
-            >
-              <TbChevronsLeft className="h-4 w-4" /> Back
-            </Button>
-            <div className="flex items-center gap-2">
-              <Button
-                className="bg-[#0081FB] hover:border-[#FFFFFF] text-[#FFF] hover:bg-blue-600 hover:text-[#FFF] cursor-pointer transition-all inter font-medium"
-                variant="outline"
-                onClick={() => setIsEditModalOpen(true)}
-              >
-                <FiEdit2 className="h-4 w-4" /> Edit Booking
-              </Button>
-              <Button
-                variant="outline"
-                className="transition-all inter font-medium"
-                onClick={handlePrint}
-              >
-                <BiPrinter className="h-4 w-4" /> Print Ticket
-              </Button>
+    <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
+      <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#101828]">
+        <div className="bg-white/80 dark:bg-[#101828]/80 backdrop-blur-sm border-b border-gray-200 dark:border-[#1D2939] sticky top-0 z-40">
+          <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between gap-4 py-6">
+              <div className="space-y-1">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#98A2B3] hover:text-blue-600"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Bookings
+                </button>
+                <div className="flex items-center gap-x-3 flex-wrap">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-[#D0D5DD]">
+                    Booking: {booking.code}
+                  </h1>
+                  <Badge className={cn(getStatusClass(booking.booking_status))}>
+                    {toTitleCase(booking.booking_status)}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <FilePenLine className="h-4 w-4" /> Edit
+                  </Button>
+                </SheetTrigger>
+                <Button
+                  onClick={handlePrint}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Printer className="h-4 w-4" /> Print Ticket
+                </Button>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Left Column: Guest Profile & Room Image */}
-            <div className="lg:col-span-1 space-y-6">
-              <Card className="shadow rounded-md">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col lg:flex-row items-start gap-8">
+            <div className="w-full lg:w-[35%] xl:w-[30%] flex-shrink-0 space-y-6 lg:sticky lg:top-36">
+              <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-xs">
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                    Guest Profile
-                  </CardTitle>
+                  <CardTitle>Guest Profile</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-20 h-20 bg-gray-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold">
                       {booking.full_name.charAt(0)}
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800">
-                      {toTitleCase(booking.full_name)}
-                    </h3>
-                    <Badge variant="outline" className="mt-2">
-                      ID: {booking.code}
-                    </Badge>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <FaPhone className="text-[#006DE4]" />
-                      <span className="font-medium">
-                        {booking.phone_number}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <FaEnvelope className="text-[#006DE4]" />
-                      <span className="font-medium break-all">
-                        {booking.email}
-                      </span>
-                    </div>
-                    <div className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <FaMapMarkerAlt className="text-[#006DE4] mt-1" />
-                      <span className="font-medium">
-                        {toTitleCase(booking.address)}
-                      </span>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-[#D0D5DD]">
+                        {toTitleCase(booking.full_name)}
+                      </h3>
+                      <p className="text-sm text-gray-500">Guest</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FaCreditCard className="text-[#006DE4]" />
-                        <span className="font-medium">Payment</span>
-                      </div>
-                      <PaymentStatusLabel status={booking.payment_status} />
+                  <Separator />
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-start gap-3">
+                      <Mail className="h-4 w-4 mt-1 text-gray-400" />
+                      <span className="break-all">{booking.email}</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FaDesktop className="text-[#006DE4]" />
-                        <span className="font-medium">Booking Type</span>
-                      </div>
-                      <Badge variant="outline">{booking.booking_type}</Badge>
+                    <div className="flex items-start gap-3">
+                      <Phone className="h-4 w-4 mt-1 text-gray-400" />
+                      <span>{booking.phone_number}</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-4 w-4 mt-1 text-gray-400" />
+                      <span>{toTitleCase(booking.address)}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-
-              {/* --- CORRECTED POSITION: Room Image Card below Guest Profile --- */}
-              {roomDetails && (
-                <Card className="shadow-none rounded-md border-none p-0">
-                  <CardHeader className="p-0 mb-0">
-                    <CardTitle className="text-base my-0 font-semibold">
-                      {roomDetails.room_type_name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-hidden rounded-md">
-                      <img
-                        src={
-                          roomDetails.image ||
-                          "https://placehold.co/600x400?text=Room"
-                        }
-                        alt={roomDetails.room_type_name}
-                        className="w-full h-52 block my-0 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => setFullscreenImageUrl(roomDetails.image)}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+              {roomDetails?.image && (
+                <img
+                  src={roomDetails.image}
+                  alt={roomDetails.room_type_name}
+                  className="w-full h-52 object-cover rounded-lg border dark:border-[#1D2939] shadow-xs"
+                />
               )}
             </div>
 
-            {/* Right Column: Booking Details */}
-            <div className="lg:col-span-3 space-y-6">
-              <Card className="shadow rounded-md">
+            <div className="w-full lg:w-[65%] xl:w-[70%] space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <InfoItem
+                  icon={CalendarCheck}
+                  label="Check-in"
+                  value={format(new Date(booking.start_date), "PP")}
+                />
+                <InfoItem
+                  icon={CalendarCheck}
+                  label="Check-out"
+                  value={format(new Date(booking.end_date), "PP")}
+                />
+                <InfoItem
+                  icon={Clock}
+                  label="Duration"
+                  value={`${booking.duration_days} Nights`}
+                />
+                <InfoItem
+                  icon={Users}
+                  label="Guests"
+                  value={booking.number_of_guests}
+                />
+              </div>
+
+              <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-xs">
                 <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                        Booking Information
-                      </CardTitle>
-                      <CardDescription className="mt-1">
-                        Booked on:{" "}
-                        {format(new Date(booking.created_at), "PPP p")}
-                      </CardDescription>
-                    </div>
-                    <BookingStatusBadge status={booking.booking_status} />
-                  </div>
+                  <CardTitle>Booking & Room Details</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-1 text-sm text-gray-600">
-                        <FaCalendarCheck className="text-[#006DE4]" />
-                        <span>Check-in</span>
-                      </div>
-                      <p className="font-semibold text-gray-800">
-                        {format(new Date(booking.start_date), "PP")}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gray-50 border border-gray-200  rounded-lg">
-                      <div className="flex items-center gap-2 mb-1 text-sm text-gray-600">
-                        <FaCalendarXmark className="text-[#006DE4]" />
-                        <span>Check-out</span>
-                      </div>
-                      <p className="font-semibold text-gray-800">
-                        {format(new Date(booking.end_date), "PP")}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gray-50 border border-gray-200  rounded-lg">
-                      <div className="flex items-center gap-2 mb-1 text-sm text-gray-600">
-                        <FaClock className="text-[#006DE4]" />
-                        <span>Duration</span>
-                      </div>
-                      <p className="font-semibold text-gray-800">
-                        {booking.duration_days} Nights
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-1 text-sm text-gray-600">
-                        <FaBed className="text-[#006DE4]" />
-                        <span>Room Type</span>
-                      </div>
-                      <p className="font-semibold text-gray-800">
-                        {booking.property_item_type}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gray-50 border border-gray-200  rounded-lg">
-                      <div className="flex items-center gap-2 mb-1 text-sm text-gray-600">
-                        <BedDouble className="text-[#006DE4]" size={16} />
-                        <span>Room Code</span>
-                      </div>
-                      <p className="font-semibold text-gray-800">
-                        {roomDetails?.code || "N/A"}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gray-50 border border-gray-200  rounded-lg">
-                      <div className="flex items-center gap-2 mb-1 text-sm text-gray-600">
-                        <FaUsers className="text-[#006DE4]" />
-                        <span>Guests</span>
-                      </div>
-                      <p className="font-semibold text-gray-800">
-                        {booking.number_of_guests}
-                      </p>
-                    </div>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Payment Status:</span>
+                    <Badge
+                      className={cn(getStatusClass(booking.payment_status))}
+                    >
+                      {toTitleCase(booking.payment_status)}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Booking Type:</span>
+                    <Badge variant="outline">
+                      {toTitleCase(booking.booking_type)}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Room Type:</span>
+                    <span className="font-semibold">
+                      {booking.property_item_type}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Room Code:</span>
+                    <span className="font-semibold">
+                      {roomDetails?.code || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Booked On:</span>
+                    <span className="font-semibold">
+                      {format(new Date(booking.created_at), "PP")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Actual Check-in:</span>
+                    <span className="font-semibold">
+                      {booking.checkin
+                        ? format(new Date(booking.checkin), "p")
+                        : "Not yet"}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
 
-              {booking.special_requests || booking.service_notes ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="shadow rounded-md">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                        Additional Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {booking.special_requests && (
-                        <div>
-                          <h4 className="font-medium flex items-center gap-2 mb-1">
-                            Guest&apos;s Requests
-                          </h4>
-                          <p className="text-sm text-gray-600 pl-6 capitalize">
-                            {booking.special_requests}
-                          </p>
-                        </div>
-                      )}
-                      <Separator />
-                      {booking.service_notes && (
-                        <div>
-                          <h4 className="font-medium flex items-center gap-2 mb-1">
-                            Service Notes
-                          </h4>
-                          <p className="text-sm text-gray-600 pl-6 capitalize">
-                            {booking.service_notes}
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  <Card className="shadow rounded-md">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                        Room Description
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-600">
-                        {roomDetails?.description || "No description available"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : (
-                <Card className="shadow rounded-md">
+              {(booking.special_requests || booking.service_notes) && (
+                <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-xs">
                   <CardHeader>
-                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                      Room Description
-                    </CardTitle>
+                    <CardTitle>Additional Information</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600">
-                      {roomDetails?.description || "No description available"}
-                    </p>
+                  <CardContent className="space-y-4">
+                    {booking.special_requests && (
+                      <div>
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Guest's Special Requests
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-[#98A2B3] pl-2 border-l-2 border-blue-500">
+                          {booking.special_requests}
+                        </p>
+                      </div>
+                    )}
+                    {booking.service_notes && (
+                      <div>
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Internal Service Notes
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-[#98A2B3] pl-2 border-l-2 border-blue-500">
+                          {booking.service_notes}
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
 
-              {/* --- CORRECTED POSITION: Room Amenities below other cards --- */}
               {roomDetails && roomDetails.amenities.length > 0 && (
-                <Card className="shadow bg-[#FFF] rounded-md">
+                <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-xs">
                   <CardHeader>
-                    <CardTitle className="text-lg font-semibold flex items-center gap-1">
-                      Room Amenities
-                    </CardTitle>
+                    <CardTitle>Room Amenities</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {roomDetails.amenities.slice(0, 8).map((amenity) => (
                         <Badge
                           key={amenity.id}
-                          variant="secondary"
-                          className="font-medium text-[0.875rem] bg-gray-50 border border-gray-200"
+                          className="bg-[#EFF6FF] text-blue-600 border border-blue-200 dark:bg-[#162142] dark:border-transparent dark:text-[#98A2B3]"
                         >
-                          <FaRegCircleCheck className="text-green-600 mr-1.5 h-3 w-3" />
                           {amenity.name}
                         </Badge>
                       ))}
@@ -487,37 +421,41 @@ export default function BookingDetailsPage() {
           </div>
         </div>
       </div>
-
-      <div className="print-area hidden">
-        <BookingPrintTicket booking={booking} roomDetails={roomDetails} />
-      </div>
-
-      {isEditModalOpen && booking && (
-        <EditBookingModal
-          booking={booking}
-          onClose={() => setIsEditModalOpen(false)}
-        />
-      )}
-
-      {fullscreenImageUrl && (
-        <div
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 cursor-zoom-out"
-          onClick={() => setFullscreenImageUrl(null)}
-        >
-          <button
-            className="absolute top-4 right-4 text-white hover:text-gray-300 z-50"
-            aria-label="Close fullscreen image"
-          >
-            <FaTimes size={24} />
-          </button>
-          <img
-            src={fullscreenImageUrl}
-            alt="Fullscreen hotel room"
-            className="max-w-full max-h-full object-contain rounded-none cursor-default"
-            onClick={(e) => e.stopPropagation()}
+      <SheetContent className="w-full sm:max-w-2xl p-0 bg-white dark:bg-[#101828] border-l dark:border-l-[#1D2939]">
+        {booking && (
+          <EditBookingForm
+            booking={booking}
+            onUpdateComplete={() => {
+              setIsSheetOpen(false);
+              setIsFormDirty(false);
+            }}
+            onDirtyChange={setIsFormDirty}
           />
-        </div>
-      )}
-    </>
+        )}
+      </SheetContent>
+
+      <AlertDialog
+        open={showUnsavedChangesDialog}
+        onOpenChange={setShowUnsavedChangesDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>You have unsaved changes!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to close? Your changes will be discarded.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, keep editing</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleDiscardChanges}
+            >
+              Yes, discard changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Sheet>
   );
 }

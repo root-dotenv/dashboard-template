@@ -19,13 +19,14 @@ export const navData = {
 
   // Main navigation items for the hotel dashboard
   navMain: [
-    { title: "Main Overview", icon: BsGrid, url: "/" },
+    { title: "Main Overview", icon: BsGrid, url: "hotel/hotel-details" },
     {
       title: "Hotel Management",
       icon: RiHotelLine,
       items: [
         { title: "My Hotel", url: "/hotel/hotel-details", icon: Circle },
         { title: "Hotel Features", url: "/hotel/hotel-features", icon: Circle },
+        { title: "Hotel Gallery", url: "/hotel/hotel-gallery", icon: Circle },
       ],
     },
     {

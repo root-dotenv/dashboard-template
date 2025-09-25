@@ -26,6 +26,9 @@ import InventoryItems from "@/pages/inventory/inventory-items";
 import InventoryCategories from "@/pages/inventory/inventory-categories";
 import EventSpaces from "@/pages/inventory/event-spaces";
 import EventSpaceTypes from "@/pages/inventory/event-space-types";
+import MainOverview from "@/pages/hotel/hotel-details";
+import CustomizeHotel from "@/pages/hotel/customize-hotel/HotelCustomizationPage";
+import HotelGallery from "@/pages/hotel/gallery/hotel-gallery";
 
 const RootLayout = () => {
   return (
@@ -63,7 +66,15 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <MainHomePage /> },
               { path: "profile", element: <PlaceholderPage /> },
-              { path: "hotel/hotel-details", element: <PlaceholderPage /> },
+              { path: "hotel/hotel-details", element: <MainOverview /> },
+              {
+                path: "hotel/customize-hotel",
+                element: <CustomizeHotel />,
+              },
+              {
+                path: "hotel/hotel-gallery",
+                element: <HotelGallery />,
+              },
               { path: "bookings/new-booking", element: <MakeBookingPage /> },
 
               { path: "bookings/:booking_id", element: <BookingDetailsPage /> },
