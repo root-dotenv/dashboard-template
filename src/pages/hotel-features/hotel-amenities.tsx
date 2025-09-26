@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "./empty-state";
-import { MoreHorizontal, Trash2, Loader2, Star, Search } from "lucide-react";
+import { MoreHorizontal, Trash2, Star, Search, Plus } from "lucide-react";
 import { FeatureSelectionSheet } from "./selection-sheet";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import {
@@ -33,6 +33,7 @@ import {
 import ErrorPage from "@/components/custom/error-page";
 import { cn } from "@/lib/utils";
 import type { Amenity } from "./features";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HotelAmenities() {
   const queryClient = useQueryClient();
@@ -48,7 +49,6 @@ export default function HotelAmenities() {
   const [search, setSearch] = useState("");
   const hotelId = "a3d5501e-c910-4e2e-a0b2-ad616c5910db";
 
-  // REVERTED: Using useQueries for data fetching (N+1 pattern)
   const amenityQueries = useQueries({
     queries: (hotel?.amenities || []).map((amenityId) => ({
       queryKey: ["amenityDetail", amenityId],
@@ -70,7 +70,6 @@ export default function HotelAmenities() {
     enabled: isSheetOpen,
   });
 
-  // REVERTED: Using .env hotelId for mutations
   const updateHotelMutation = useMutation({
     mutationFn: (newAmenityIds: string[]) =>
       hotelClient.patch(`hotels/${hotelId}/`, { amenities: newAmenityIds }),
@@ -95,27 +94,21 @@ export default function HotelAmenities() {
   };
 
   const handleSave = () => {
-    if (Array.from(selectedIds).length === 0) {
-      toast.warning("Your hotel must have at least one amenity.");
-      return;
-    }
     updateHotelMutation.mutate(Array.from(selectedIds));
   };
 
   const handleRemove = (amenityId: string) => {
     const currentIds = new Set(hotel?.amenities || []);
-    if (currentIds.size <= 1) {
-      toast.warning("Your hotel must have at least one amenity.");
-      return;
-    }
     currentIds.delete(amenityId);
     updateHotelMutation.mutate(Array.from(currentIds));
   };
 
   if (isHotelLoading || areAmenitiesLoading) {
     return (
-      <div className="w-full flex items-center justify-center py-20">
-        <Loader2 className="animate-spin h-10 w-10 text-blue-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-48 w-full rounded-xl" />
+        ))}
       </div>
     );
   }
@@ -141,63 +134,50 @@ export default function HotelAmenities() {
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <div className="space-y-6">
-        <Card className="bg-white dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] rounded-xl p-6 shadow-xs">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-600 dark:text-[#98A2B3]">
-                Total Amenities
-              </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-[#D0D5DD]">
-                {amenities.length}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 shadow-xs">
-              <Star className="h-5 w-5 text-white" />
-            </div>
-          </div>
-        </Card>
-
-        <div className="flex justify-between items-center">
+        {/* --- Redesigned Header --- */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#D0D5DD]">
-              Amenities List
+              Hotel Amenities ({amenities.length})
             </h2>
             <p className="text-gray-600 dark:text-[#98A2B3]">
               Manage the amenities available in your hotel rooms.
             </p>
           </div>
-          <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              onClick={handleOpenSheet}
-              className="gap-2 bg-white dark:bg-[#101828] dark:text-[#D0D5DD] border-gray-200 dark:border-[#1D2939] rounded-md shadow-xs"
-            >
-              Add or Remove
-            </Button>
-          </SheetTrigger>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-[#5D636E]" />
+              <Input
+                placeholder="Search amenities by name or description..."
+                className="h-10 pl-10 pr-4 w-full bg-white dark:bg-[#171F2F] border-[1.25px] border-[#E4E7EC] dark:border-[#1D2939] rounded-lg shadow-none focus:ring-2 focus:ring-blue-500"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <SheetTrigger asChild>
+              <Button
+                onClick={handleOpenSheet}
+                className="h-10 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-[#FFF] hover:text-[#FFF] px-4 rounded-lg transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add or Remove</span>
+              </Button>
+            </SheetTrigger>
+          </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-          <Input
-            placeholder="Search amenities by name or description..."
-            className="pl-10 bg-white dark:bg-[#171F2F] border-gray-200 dark:border-[#1D2939] rounded-md shadow-xs"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
+        {/* --- Redesigned Content Grid --- */}
         <div>
           {filteredAmenities.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAmenities.map((amenity) => (
                 <Card
                   key={amenity.id}
-                  className="flex flex-col justify-between bg-white dark:bg-[#171F2F] border-gray-200 dark:border-[#1D2939] shadow-xs hover:shadow-md transition-shadow duration-200"
+                  className="flex flex-col justify-between bg-transparent dark:bg-transparent border-[1.25px] border-[#E4E7EC] dark:border-[#1D2939] shadow-xs rounded-xl"
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                      <CardTitle className="text-lg font-semibold text-gray-800 dark:text-[#D0D5DD]">
                         {amenity.name}
                       </CardTitle>
                       <Badge
@@ -211,12 +191,12 @@ export default function HotelAmenities() {
                         {amenity.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
-                    <CardDescription className="pt-2 line-clamp-3">
+                    <CardDescription className="pt-2 line-clamp-3 dark:text-[#98A2B3]">
                       {amenity.description}
                     </CardDescription>
                   </CardHeader>
-                  <CardFooter className="flex justify-between items-center bg-gray-50 dark:bg-[#101828]/50 p-4 mt-auto">
-                    <span className="font-mono bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-300">
+                  <CardFooter className="flex justify-between items-center p-4 mt-auto">
+                    <span className="font-mono bg-[#EFF6FF] text-[#1547E5] dark:bg-[#101828] px-2 py-1 rounded-md text-xs dark:text-[#98A2B3]">
                       {amenity.code}
                     </span>
                     <DropdownMenu>
@@ -225,7 +205,7 @@ export default function HotelAmenities() {
                           variant="ghost"
                           className="h-9 w-9 p-0 rounded-full dark:hover:bg-[#1D2939]"
                         >
-                          <MoreHorizontal className="h-5 w-5" />
+                          <MoreHorizontal className="h-5 w-5 dark:text-[#98A2B3]" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -252,11 +232,12 @@ export default function HotelAmenities() {
                   ? "No amenities match your search. Try adjusting your keywords."
                   : "This hotel has not listed any in-room amenities yet."
               }
+              icon={<Star className="h-10 w-10 text-gray-400" />}
             />
           )}
         </div>
       </div>
-      <SheetContent className="w-full sm:max-w-lg p-0 bg-white dark:bg-[#101828] border-l dark:border-l-[#1D2939]">
+      <SheetContent className="w-full sm:max-w-lg p-0 bg-[#FFF] dark:bg-[#101828] border-l dark:border-l-[#1D2939]">
         <FeatureSelectionSheet
           title="Manage Hotel Amenities"
           description="Select the amenities available in your rooms to attract more guests."

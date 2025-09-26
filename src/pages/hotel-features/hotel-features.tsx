@@ -7,6 +7,7 @@ import HotelMealTypes from "./hotel-meals";
 import HotelAmenities from "./hotel-amenities";
 import HotelTranslations from "./hotel-translations";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { FaConciergeBell, FaStar } from "react-icons/fa";
 import { BsGridFill } from "react-icons/bs";
 import { GiMeal } from "react-icons/gi";
@@ -58,9 +59,10 @@ export default function HotelFeaturesLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#101828]">
+    <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#101828]">
+      {/* --- Page Header --- */}
       <div className="bg-white/90 dark:bg-[#101828]/90 backdrop-blur-xl border-b border-gray-200 dark:border-[#1D2939] sticky top-0 z-30 shadow-sm">
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-[#D0D5DD]">
               Hotel Features
@@ -73,34 +75,30 @@ export default function HotelFeaturesLayout() {
         </div>
       </div>
 
-      <main className="max-w-8xl mx-auto p-4 md:p-6">
-        <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
-          {/* Left Side Navigation */}
-          <aside className="w-full md:w-60 lg:w-64 flex-shrink-0">
-            <nav className="space-y-1.5 sticky top-36 bg-white dark:bg-[#171F2F] border border-gray-200 dark:border-[#1D2939] p-3 rounded-xl shadow-sm">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveView(item.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-medium rounded-lg transition-colors",
-                    activeView === item.id
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-100"
-                  )}
-                >
-                  <div className="w-5 h-5 flex items-center justify-center">
-                    {item.icon}
-                  </div>
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </aside>
-
-          {/* Right Content Area */}
-          <div className="flex-1 min-w-0">{renderContent()}</div>
+      <main className="container mx-auto p-4 md:p-6 space-y-6">
+        {/* --- Redesigned Horizontal Navigation --- */}
+        <div className="overflow-x-auto pb-2">
+          <div className="flex items-center gap-2 w-max">
+            {navItems.map((item) => (
+              <Button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-semibold shadow-none transition-all duration-200 flex items-center gap-2",
+                  activeView === item.id
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "text-[#1D2939] border border-gray-200 bg-white hover:bg-gray-100 dark:text-[#98A2B3] dark:hover:bg-[#1C2433] dark:bg-[#171F2F] dark:border-[#1D2939]"
+                )}
+              >
+                {item.icon}
+                {item.label}
+              </Button>
+            ))}
+          </div>
         </div>
+
+        {/* --- Content Area --- */}
+        <div className="min-w-0">{renderContent()}</div>
       </main>
     </div>
   );

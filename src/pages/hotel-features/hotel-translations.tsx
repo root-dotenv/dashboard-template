@@ -11,23 +11,10 @@ import {
 import hotelClient from "../../api/hotel-client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "./empty-state";
-import {
-  Plus,
-  MoreHorizontal,
-  Trash2,
-  Loader2,
-  Languages,
-  Search,
-} from "lucide-react";
+import { Plus, MoreHorizontal, Trash2, Search } from "lucide-react";
 import { FeatureSelectionSheet } from "./selection-sheet";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -41,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Country, EnrichedTranslation, Translation } from "./features";
 import { cn } from "@/lib/utils";
 import { MdGTranslate } from "react-icons/md";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HotelTranslations() {
   const queryClient = useQueryClient();
@@ -132,27 +120,21 @@ export default function HotelTranslations() {
   };
 
   const handleSave = () => {
-    if (Array.from(selectedIds).length === 0) {
-      toast.warning("Your hotel must have at least one translation.");
-      return;
-    }
     updateHotelMutation.mutate(Array.from(selectedIds));
   };
 
   const handleRemove = (translationId: string) => {
     const currentIds = new Set(hotel?.translations || []);
-    if (currentIds.size <= 1) {
-      toast.warning("Your hotel must have at least one translation.");
-      return;
-    }
     currentIds.delete(translationId);
     updateHotelMutation.mutate(Array.from(currentIds));
   };
 
   if (isHotelLoading || areTranslationsLoading) {
     return (
-      <div className="w-full flex items-center justify-center py-20">
-        <Loader2 className="animate-spin h-10 w-10 text-blue-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 w-full rounded-xl" />
+        ))}
       </div>
     );
   }
@@ -180,63 +162,48 @@ export default function HotelTranslations() {
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <div className="space-y-6">
-        <Card className="bg-white dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] rounded-xl p-6 shadow-xs">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-600 dark:text-[#98A2B3]">
-                Total Translations
-              </p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-[#D0D5DD]">
-                {translations.length}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 shadow-xs">
-              <MdGTranslate className="h-5 w-5 text-white" />
-            </div>
-          </div>
-        </Card>
-
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#D0D5DD]">
-              Translations List
+              Hotel Translations ({translations.length})
             </h2>
             <p className="text-gray-600 dark:text-[#98A2B3]">
               Manage your hotel's language options.
             </p>
           </div>
-          <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              onClick={handleOpenSheet}
-              className="gap-2 bg-white dark:bg-[#101828] dark:text-[#D0D5DD] border-gray-200 dark:border-[#1D2939] rounded-md shadow-xs"
-            >
-              <Plus className="h-4 w-4" /> Add / Remove
-            </Button>
-          </SheetTrigger>
-        </div>
-
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-          <Input
-            placeholder="Search by language or country..."
-            className="pl-10 bg-white dark:bg-[#171F2F] border-gray-200 dark:border-[#1D2939] rounded-md shadow-xs"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-[#5D636E]" />
+              <Input
+                placeholder="Search translations by name or description..."
+                className="h-10 pl-10 pr-4 w-full bg-white dark:bg-[#171F2F] border-[1.25px] border-[#E4E7EC] dark:border-[#1D2939] rounded-lg shadow-none focus:ring-2 focus:ring-blue-500"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <SheetTrigger asChild>
+              <Button
+                onClick={handleOpenSheet}
+                className="h-10 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-[#FFF] hover:text-[#FFF] px-4 rounded-lg transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add or Remove</span>
+              </Button>
+            </SheetTrigger>
+          </div>
         </div>
 
         <div>
           {filteredTranslations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTranslations.map((translation) => (
                 <Card
                   key={translation.id}
-                  className="flex flex-col justify-between bg-white dark:bg-[#171F2F] border-gray-200 dark:border-[#1D2939] shadow-xs hover:shadow-md transition-shadow duration-200"
+                  className="flex flex-col justify-between bg-transparent dark:bg-transparent border-[1.25px] border-[#E4E7EC] dark:border-[#1D2939] shadow-xs rounded-xl"
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                      <CardTitle className="text-lg font-semibold text-gray-800 dark:text-[#D0D5DD]">
                         {translation.language} ({translation.country_name})
                       </CardTitle>
                       <Badge
@@ -251,20 +218,14 @@ export default function HotelTranslations() {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex-grow">
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                      <Languages className="mr-2 h-4 w-4" />
-                      <span>Language Option</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end items-center bg-gray-50 dark:bg-[#101828]/50 p-4 mt-auto">
+                  <CardFooter className="flex justify-end items-center bg-gray-50 dark:bg-[#171F2F]/50 p-4 mt-auto">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           className="h-9 w-9 p-0 rounded-full dark:hover:bg-[#1D2939]"
                         >
-                          <MoreHorizontal className="h-5 w-5" />
+                          <MoreHorizontal className="h-5 w-5 dark:text-[#98A2B3]" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -291,6 +252,7 @@ export default function HotelTranslations() {
                   ? "No translations match your search. Try adjusting your keywords."
                   : "This hotel has not listed any translations yet."
               }
+              icon={<MdGTranslate className="h-10 w-10 text-gray-400" />}
             />
           )}
         </div>

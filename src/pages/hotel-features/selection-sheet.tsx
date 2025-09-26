@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Item {
   id: string;
@@ -38,82 +39,86 @@ export function FeatureSelectionSheet({
   onSave,
   isSaving,
 }: FeatureSelectionSheetProps) {
-  const handleSelectAll = (isChecked: boolean) => {
-    items.forEach((item) => onSelectionChange(item.id, isChecked));
+  const handleSaveClick = () => {
+    if (selectedIds.size === 0) {
+      toast.warning("You must select at least one feature.", {
+        description:
+          "Your hotel needs to have at least one option available in this category.",
+      });
+      return;
+    }
+    onSave();
   };
 
-  const areAllSelected = items.length > 0 && selectedIds.size === items.length;
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white dark:bg-[#101828]">
       <SheetHeader className="px-6 pt-6 pb-4 border-b dark:border-b-[#1D2939]">
-        <SheetTitle className="text-xl font-bold text-gray-900 dark:text-[#D0D5DD]">
+        <SheetTitle className="text-2xl font-bold text-[#1D2939] dark:text-[#D0D5DD]">
           {title}
         </SheetTitle>
-        <SheetDescription>{description}</SheetDescription>
+        <SheetDescription className="dark:text-[#98A2B3] text-[#667085] text-[0.9375rem]">
+          {description}
+        </SheetDescription>
       </SheetHeader>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
-          <Checkbox
-            id="select-all"
-            checked={areAllSelected}
-            onCheckedChange={(checked) => handleSelectAll(!!checked)}
-            className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
-          />
-          <Label
-            htmlFor="select-all"
-            className="font-semibold text-sm dark:text-gray-300 cursor-pointer"
-          >
-            Select All
-          </Label>
-        </div>
-        <Separator className="my-4 dark:bg-[#1D2939]" />
-        <ScrollArea
-          className="h-full pr-4"
-          style={{ height: "calc(100vh - 250px)" }}
-        >
-          <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item.id} className="flex items-center space-x-3">
+      <ScrollArea className="flex-1 p-6">
+        <div className="flex flex-wrap gap-3">
+          {items.map((item) => {
+            const isSelected = selectedIds.has(item.id);
+            return (
+              <div key={item.id}>
                 <Checkbox
                   id={item.id}
-                  checked={selectedIds.has(item.id)}
-                  onCheckedChange={(isChecked) =>
-                    onSelectionChange(item.id, !!isChecked)
+                  checked={isSelected}
+                  onCheckedChange={(checked) =>
+                    onSelectionChange(item.id, !!checked)
                   }
-                  className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
+                  className="sr-only"
                 />
                 <Label
                   htmlFor={item.id}
-                  className="w-full font-normal dark:text-gray-300 cursor-pointer"
+                  className={cn(
+                    "flex items-center justify-center px-4 py-2 rounded-full border font-medium cursor-pointer transition-all text-sm",
+                    isSelected
+                      ? "bg-blue-600 dark:bg-[#162142] text-[#FFF] dark:text-[#7592FF] border-transparent dark:border-blue-800"
+                      : "bg-white dark:bg-[#171F2F] border-gray-300 dark:border-[#1D2939] text-gray-700 dark:text-[#D0D5DD] hover:bg-gray-50 dark:hover:bg-[#1C2433]"
+                  )}
                 >
                   {item.name}
                 </Label>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
+            );
+          })}
+        </div>
+      </ScrollArea>
 
-      <SheetFooter className="px-6 py-4 border-t bg-white dark:bg-[#101828] dark:border-t-[#1D2939]">
-        <SheetClose asChild>
+      <SheetFooter className="px-6 py-4 border-t bg-white dark:bg-[#101828] dark:border-t-[#1D2939] space-y-4 sm:space-y-0">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 mb-4 mt-3">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+          <p className="text-xs text-amber-800 dark:text-amber-300">
+            A hotel must have at least one feature in this category at all
+            times.
+          </p>
+        </div>
+        <div className="flex w-full justify-end gap-3">
+          <SheetClose asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="dark:bg-transparent dark:border-[#1D2939] dark:hover:bg-[#1C2433] dark:text-[#D0D5DD]"
+            >
+              Cancel
+            </Button>
+          </SheetClose>
           <Button
-            type="button"
-            variant="outline"
-            className="dark:bg-transparent dark:border-[#1D2939] dark:hover:bg-[#1C2433]"
+            onClick={handleSaveClick}
+            disabled={isSaving || selectedIds.size === 0}
+            className="bg-blue-600 hover:bg-blue-700 transition-all disabled:opacity-50"
           >
-            Cancel
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Update Hotel
           </Button>
-        </SheetClose>
-        <Button
-          onClick={onSave}
-          disabled={isSaving}
-          className="bg-blue-600 hover:bg-blue-700 transition-all"
-        >
-          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Update Hotel
-        </Button>
+        </div>
       </SheetFooter>
     </div>
   );
