@@ -138,7 +138,7 @@ export function TopNavigationBar() {
           <span className="sr-only">Toggle Sidebar</span>
         </button>
         <h1 className="hidden text-[20px] font-bold text-gray-900 dark:text-[#D0D5DD] md:block">
-          SafariPro
+          SafariPro Management
         </h1>
       </div>
 
