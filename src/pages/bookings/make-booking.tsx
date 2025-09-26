@@ -134,3 +134,5 @@ export default function MakeBookingPage() {
     </div>
   );
 }
+
+// TODO: UNCOMMENT THIS SNIPPETS ABOVE
