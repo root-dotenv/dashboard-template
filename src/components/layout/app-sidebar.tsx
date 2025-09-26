@@ -17,7 +17,65 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import QRCode from "react-qr-code";
 import { UserMenuItems } from "./user-menu-items";
+
+const DownloadAppDialog = () => {
+  const playStoreUrl =
+    "https://play.google.com/store/apps/details?id=com.safaripro.hotel";
+  const appStoreUrl = "https://apps.apple.com/us/app/safaripro-hotel/id123456";
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          variant={"main"}
+          size="sm"
+          className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
+        >
+          Download the App
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md dark:bg-[#101828] dark:border-[#1D2939]">
+        <DialogHeader>
+          <DialogTitle className="dark:text-[#D0D5DD]">
+            Download the SafariPro App
+          </DialogTitle>
+          <DialogDescription className="dark:text-[#98A2B3]">
+            Scan a code to download the app for your guests to book hotels,
+            tours, and more.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-around items-center pt-4 pb-2">
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-2 bg-white rounded-md">
+              <QRCode value={playStoreUrl} size={128} />
+            </div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Download for Android
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-2 bg-white rounded-md">
+              <QRCode value={appStoreUrl} size={128} />
+            </div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Download for iOS
+            </p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const NavItem = ({
   item,
@@ -102,7 +160,6 @@ const NavItem = ({
                       : "text-[#667085] hover:bg-gray-100/50 hover:text-gray-800 dark:text-[#98A2B3] dark:hover:bg-[#1C2433]"
                   )}
                 >
-                  {/* --- ENHANCEMENT START --- */}
                   <child.icon
                     className={cn(
                       "h-2 w-2 border-none hover:border-none hover:bg-none",
@@ -110,7 +167,6 @@ const NavItem = ({
                     )}
                   />
                   <span>{child.title}</span>
-                  {/* --- ENHANCEMENT END --- */}
                 </Link>
               );
             })}
@@ -229,19 +285,13 @@ export function AppSidebar() {
           <div className="p-4">
             <div className="p-4 rounded-lg bg-[#F9FAFB] border-[0.9px] border-[#E4E7EC] text-center dark:bg-[#171F2F] dark:border-[#1D2939]">
               <h3 className="font-bold text-sm text-gray-900 dark:text-[#D0D5DD]">
-                The All-in-One Platform
+                The All-in-One Travel App
               </h3>
               <p className="text-xs text-gray-500 mt-1 dark:text-[#98A2B3]">
-                Unlock tour management, car rentals, and unified analytics to
-                streamline your business.
+                Empower your guests to book hotels, tours, and transfers
+                seamlessly with the SafariPro app.
               </p>
-              <Button
-                variant={"main"}
-                size="sm"
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
-              >
-                Upgrade to Pro
-              </Button>
+              <DownloadAppDialog />
             </div>
           </div>
           <div className="p-4 border-t dark:border-[#1D2939]">
