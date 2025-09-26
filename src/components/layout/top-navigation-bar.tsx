@@ -108,11 +108,9 @@
 //   );
 // }
 
-// TODO: COMMENT FROM HERE TO TOP IF YOU DON'T NEED THE TOP NAVIGATION BAR SPANNING THE FULL WIDTH OF THE SCREE
 import { Search, ChevronDown, BellIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Notifications } from "@/components/custom/notifications";
-import { navData } from "@/lib/nav-data";
 import { useSidebarStore } from "@/store/sidebar-store";
 import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 import { BiCog } from "react-icons/bi";
@@ -125,9 +123,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserMenuItems } from "./user-menu-items";
 import { ThemeToggle } from "../custom/theme-toggle";
+import { useAuthStore } from "@/store/auth.store";
 
 export function TopNavigationBar() {
   const { toggleSidebar } = useSidebarStore();
+  const user = useAuthStore((state) => state.user);
 
   return (
     <header className="flex h-[68px] flex-shrink-0 items-center justify-between border-b bg-[#FFF] px-4 md:px-6 dark:bg-[#101828] dark:border-[#1D2939]">
@@ -191,36 +191,34 @@ export function TopNavigationBar() {
 
         <Separator orientation="vertical" className="h-6 dark:bg-[#1D2939]" />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <div
-              role="button"
-              className="group flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 p-[5px] pr-3 transition-colors hover:bg-gray-100 dark:border-[#1D2939] dark:hover:bg-[#1C2433]"
+        {user && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div
+                role="button"
+                className="group flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 p-[5px] pr-3 transition-colors hover:bg-gray-100 dark:border-[#1D2939] dark:hover:bg-[#1C2433]"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={""} alt={user.first_name} />
+                  <AvatarFallback className="text-[#344054] bg-[#F2F4F7] dark:bg-[#171F2F] dark:text-[#D0D5DD]">
+                    {user.first_name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden text-sm font-semibold text-gray-900 dark:text-[#D0D5DD] md:block">
+                  {user.first_name} {user.last_name}
+                </span>
+                <ChevronDown className="hidden h-4 w-4 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-[#98A2B3] md:block" />
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-56 rounded-lg dark:bg-[#101828] dark:border-[#1D2939]"
+              align="end"
+              sideOffset={8}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarImage
-                  src={navData.user.avatar}
-                  alt={navData.user.name}
-                />
-                <AvatarFallback className="text-[#344054] bg-[#F2F4F7] dark:bg-[#171F2F] dark:text-[#D0D5DD]">
-                  {navData.user.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden text-sm font-semibold text-gray-900 dark:text-[#D0D5DD] md:block">
-                {navData.user.name}
-              </span>
-              <ChevronDown className="hidden h-4 w-4 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-[#98A2B3] md:block" />
-              <span className="sr-only">Toggle user menu</span>
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-56 rounded-lg dark:bg-[#101828] dark:border-[#1D2939]"
-            align="end"
-            sideOffset={8}
-          >
-            <UserMenuItems user={navData.user} />
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <UserMenuItems />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </header>
   );

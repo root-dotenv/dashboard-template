@@ -1,4 +1,3 @@
-// src/components/layout/user-menu-items.tsx
 "use client";
 import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,27 +7,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useAuthStore } from "@/store/auth.store";
+import { useNavigate } from "react-router-dom";
 
-interface UserProps {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
+export function UserMenuItems() {
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
-}
 
-export function UserMenuItems({ user }: UserProps) {
+  if (!user) return null;
+
   return (
     <>
       <DropdownMenuLabel className="p-0 font-normal">
         <div className="flex items-center gap-3 p-2 text-left">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={""} alt={user.first_name} />
+            <AvatarFallback>{user.first_name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-medium dark:text-[#D0D5DD]">
-              {user.name}
+              {user.first_name} {user.last_name}
             </span>
             <span className="truncate text-xs text-muted-foreground dark:text-[#98A2B3]">
               {user.email}
@@ -56,7 +59,10 @@ export function UserMenuItems({ user }: UserProps) {
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator className="dark:bg-[#1D2939]" />
-      <DropdownMenuItem className="dark:focus:bg-[#1C2433] dark:text-[#D0D5DD]">
+      <DropdownMenuItem
+        onClick={handleLogout}
+        className="dark:focus:bg-[#1C2433] dark:text-[#D0D5DD]"
+      >
         <LogOut className="mr-2 h-4 w-4 dark:text-[#98A2B3]" />
         <span>Log out</span>
       </DropdownMenuItem>

@@ -340,7 +340,7 @@
 //   );
 // }
 
-// TODO: COMMENT FROM HERE TO TOP IF YOU DON'T NEED THE TOP NAVIGATION BAR SPANNING THE FULL WIDTH OF THE SCREE
+// src/components/layout/app-sidebar.tsx
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronUp, MoreVertical } from "lucide-react";
 import { useSidebarStore } from "@/store/sidebar-store";
@@ -369,6 +369,7 @@ import {
 } from "@/components/ui/dialog";
 import QRCode from "react-qr-code";
 import { UserMenuItems } from "./user-menu-items";
+import { useAuthStore } from "@/store/auth.store";
 
 const DownloadAppDialog = () => {
   const playStoreUrl =
@@ -434,7 +435,6 @@ const NavItem = ({
   const hasChildren = item.items && item.items.length > 0;
 
   const isLinkActive = (url: string) => {
-    // Exact match for homepage, startsWith for others
     if (url === "/") {
       return location.pathname === "/";
     }
@@ -558,17 +558,14 @@ const NavItem = ({
 export function AppSidebar() {
   const { isCollapsed } = useSidebarStore();
   const location = useLocation();
+  const user = useAuthStore((state) => state.user);
 
-  // --- MODIFIED LOGIC ---
-  // This function finds which parent menu should be open based on the current URL.
   const findActiveParentMenu = () => {
     return navData.navMain.find((item) =>
       item.items?.some((child) => location.pathname.startsWith(child.url))
     )?.title;
   };
 
-  // The state is initialized with the result of the function,
-  // OR it falls back to "Hotel Management" if no other parent is active.
   const [openMenu, setOpenMenu] = React.useState<string | null>(
     findActiveParentMenu() || "Hotel Management"
   );
@@ -622,7 +619,7 @@ export function AppSidebar() {
           </div>
         </div>
       </nav>
-      {!isCollapsed && (
+      {!isCollapsed && user && (
         <div className="mt-auto">
           <div className="p-4">
             <div className="p-4 rounded-lg bg-[#F9FAFB] border-[0.9px] border-[#E4E7EC] text-center dark:bg-[#171F2F] dark:border-[#1D2939]">
@@ -640,18 +637,15 @@ export function AppSidebar() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={navData.user.avatar}
-                    alt={navData.user.name}
-                  />
-                  <AvatarFallback>{navData.user.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={""} alt={user.first_name} />
+                  <AvatarFallback>{user.first_name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
                   <p className="text-sm font-semibold text-gray-900 dark:text-[#D0D5DD]">
-                    {navData.user.name}
+                    {user.first_name} {user.last_name}
                   </p>
                   <p className="text-xs text-gray-500 truncate dark:text-[#98A2B3]">
-                    {navData.user.email}
+                    {user.email}
                   </p>
                 </div>
               </div>
@@ -671,7 +665,7 @@ export function AppSidebar() {
                   sideOffset={10}
                   className="w-56 rounded-lg ml-3 mb-2 dark:bg-[#101828] dark:border-[#1D2939]"
                 >
-                  <UserMenuItems user={navData.user} />
+                  <UserMenuItems />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
