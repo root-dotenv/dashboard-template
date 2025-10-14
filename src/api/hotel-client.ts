@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const hotelClient = axios.create({
-  baseURL: import.meta.env.VITE_HOTEL_BASE_URL,
+  baseURL: "http://hotel.safaripro.net/api/v1", // Hardcoded URL
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -28,7 +28,7 @@ hotelClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response.status === 401) {
+    if (error.response?.status === 401) {
       console.log(`401 An Error has occured: hotelClient`, error.message);
       console.log("Unauthorized request. Redirecting to login...");
     }

@@ -1,30 +1,76 @@
-// - - - src/api/sso-client.ts
 import axios from "axios";
+import { useAuthStore } from "@/store/auth.store";
 
-const ssoClient = axios.create({
-  baseURL: import.meta.env.VITE_SSO_BASE_URL,
+// The base URL for the authentication and members service.
+const baseURL = "http://vendor.safaripro.net:8001/api/v1";
+
+const authClient = axios.create({
+  baseURL: baseURL,
   timeout: 15000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
-ssoClient.interceptors.request.use(
+// Request interceptor to add the tenant header and auth token to every request.
+authClient.interceptors.request.use(
   (config) => {
+    // Add the mandatory tenant schema header for the backend.
+    config.headers["X-Tenant-Schema"] = "hotel_service";
+
+    // Attach the access token from the Zustand store if it exists.
+    const token = useAuthStore.getState().accessToken;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
+    console.error(`An Error has occurred with the request: ${error.message}`);
     return Promise.reject(error);
   }
 );
 
-ssoClient.interceptors.response.use(
+// Response interceptor to handle token refreshing automatically.
+authClient.interceptors.response.use(
   (response) => {
+    // If the request is successful, just return the response.
     return response;
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Check for 401 Unauthorized, ensure it's not a retry already,
+    // and that the failed request was not the refresh endpoint itself.
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      originalRequest.url !== "/auth/refresh"
+    ) {
+      originalRequest._retry = true; // Mark request to prevent infinite retry loops.
+
+      try {
+        // Attempt to get a new access token using the refresh token.
+        const newAccessToken = await useAuthStore
+          .getState()
+          .refreshTokenAction();
+
+        if (newAccessToken) {
+          // Update the authorization header on the original request config.
+          originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+          // Retry the original request with the new token.
+          return authClient(originalRequest);
+        } else {
+          // If refreshTokenAction returns null, logout was triggered.
+          return Promise.reject(error);
+        }
+      } catch (refreshError) {
+        // If the refresh token process itself fails, reject.
+        // Logout is handled inside the refreshTokenAction.
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // For any other errors, just pass them along.
     return Promise.reject(error);
   }
 );
 
-export default ssoClient;
+export default authClient;
