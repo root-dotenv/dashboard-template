@@ -179,6 +179,7 @@ export default function HotelDepartments() {
   const createDepartmentMutation = useMutation({
     mutationFn: (newDepartment: DepartmentFormValues) => {
       const payload = { ...newDepartment, hotel: hotel!.id };
+      console.log("Creating department with payload:", payload);
       return hotelClient.post("departments/", payload);
     },
     onSuccess: () => {

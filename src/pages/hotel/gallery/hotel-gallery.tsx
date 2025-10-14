@@ -15,9 +15,13 @@ import {
   X,
   Expand,
   Settings,
+  AlertTriangle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import Swal from "sweetalert2";
+import axios from "axios";
+
+// Assuming Swal is available globally via a script tag, e.g., from a CDN
+declare const Swal: any;
 
 import { Button } from "@/components/ui/button";
 import {
@@ -48,11 +52,36 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import DataLoadingError from "@/pages/error/application-error-page";
-import hotelClient from "@/api/hotel-client";
+
+// --- INLINE-DEFINED COMPONENTS TO RESOLVE IMPORTS ---
+
+const hotelClient = axios.create({
+  baseURL: "http://hotel.safaripro.net/api/v1/",
+});
+
+const DataLoadingError = ({
+  title,
+  subtitle,
+  error,
+}: {
+  title: string;
+  subtitle: string;
+  error: Error;
+}) => (
+  <div className="flex flex-col items-center justify-center h-full text-center py-16">
+    <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
+    <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+      {title}
+    </h2>
+    <p className="text-gray-600 dark:text-gray-400 mb-4">{subtitle}</p>
+    <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md text-sm text-red-600 dark:text-red-400 w-full max-w-md overflow-x-auto">
+      <code>{error.message}</code>
+    </pre>
+  </div>
+);
 
 // --- CONSTANTS ---
-const HOTEL_ID = "a3d5501e-c910-4e2e-a0b2-ad616c5910db";
+const HOTEL_ID = "552e27a3-7ac2-4f89-bc80-1349f3198105";
 
 // --- TYPESCRIPT INTERFACES ---
 interface ImageCategory {
@@ -342,7 +371,7 @@ const ManageCategoriesDialog = ({
       confirmButtonText: "Yes, delete it!",
       background: document.body.classList.contains("dark") ? "#101828" : "#fff",
       color: document.body.classList.contains("dark") ? "#D0D5DD" : "#000",
-    }).then((result) => {
+    }).then((result: { isConfirmed: boolean }) => {
       if (result.isConfirmed) {
         deleteMutate(category.id);
       }
@@ -519,7 +548,7 @@ export default function HotelGallery() {
       confirmButtonText: "Yes, delete it!",
       background: document.body.classList.contains("dark") ? "#101828" : "#fff",
       color: document.body.classList.contains("dark") ? "#D0D5DD" : "#000",
-    }).then((result) => {
+    }).then((result: { isConfirmed: boolean }) => {
       if (result.isConfirmed) {
         deleteImageMutate(image.id);
       }
@@ -544,7 +573,7 @@ export default function HotelGallery() {
 
   if (isCategoriesError || isImagesError) {
     const error = new Error(
-      [categoriesError?.message, imagesError?.message]
+      [(categoriesError as Error)?.message, (imagesError as Error)?.message]
         .filter(Boolean)
         .join(" | ")
     );
@@ -560,23 +589,28 @@ export default function HotelGallery() {
   }
 
   return (
-    <>
-      <div className="container mx-auto p-4 md:p-6 lg:p-8 bg-gray-50 dark:bg-[#0F172A] min-h-screen">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-[#D0D5DD]">
-              Hotel Gallery
-            </h1>
-            <p className="text-muted-foreground dark:text-[#98A2B3]">
-              Manage your hotel's images and categories.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 mt-4 md:mt-0">
-            <ManageCategoriesDialog categories={categories} />
-            <AddImageDialog categories={categories} />
+    <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#101828]">
+      {/* --- Page Header --- */}
+      <div className="bg-white/90 dark:bg-[#101828]/90 backdrop-blur-xl border-b border-gray-200 dark:border-[#1D2939] sticky top-0 z-30 shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-[#D0D5DD]">
+                Hotel Gallery
+              </h1>
+              <p className="mt-1 text-gray-600 dark:text-[#98A2B3]">
+                Manage your hotel's images and categories.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 mt-4 md:mt-0">
+              <ManageCategoriesDialog categories={categories} />
+              <AddImageDialog categories={categories} />
+            </div>
           </div>
         </div>
+      </div>
 
+      <main className="container mx-auto p-4 md:p-6 lg:p-8">
         {isLoadingCategories ? (
           <Skeleton className="h-10 w-full mb-6" />
         ) : (
@@ -680,8 +714,7 @@ export default function HotelGallery() {
             </div>
           )}
         </div>
-      </div>
-
+      </main>
       <AnimatePresence>
         {lightboxImage && (
           <motion.div
@@ -709,6 +742,6 @@ export default function HotelGallery() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }

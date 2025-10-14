@@ -968,12 +968,17 @@ export default function MainOverview() {
   const translations = translationQueries
     .filter((q) => q.isSuccess)
     .map((q) => q.data);
-  const allocationsWithRoomNames = allocationData?.results.map((alloc) => ({
-    ...alloc,
-    room_type_name:
-      hotel?.room_type.find((rt) => rt.id === alloc.room_type)?.name ||
-      "Unknown",
-  }));
+
+  // --- FIX [1]: Added `|| []` to safely handle cases where results might be undefined ---
+  const allocationsWithRoomNames = (allocationData?.results || []).map(
+    (alloc) => ({
+      ...alloc,
+      room_type_name:
+        (hotel?.room_type || []).find((rt) => rt.id === alloc.room_type)
+          ?.name || "Unknown",
+    })
+  );
+
   const todaysRevenue =
     revenueData?.find(
       (d) =>
@@ -1054,13 +1059,12 @@ export default function MainOverview() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           <RevenueChart data={revenueData || []} isLoading={isRevenueLoading} />
+          {/* --- FIX [2]: Added `|| []` to prevent .map on undefined --- */}
           <RoomDistributionChart
-            data={
-              hotel?.room_type.map((rt) => ({
-                name: rt.name,
-                total: rt.room_counts.total,
-              })) || []
-            }
+            data={(hotel?.room_type || []).map((rt) => ({
+              name: rt.name,
+              total: rt.room_counts.total,
+            }))}
             isLoading={isHotelLoading}
           />
         </div>
@@ -1073,8 +1077,9 @@ export default function MainOverview() {
             />
           </div>
           <div>
+            {/* --- FIX [3]: Added `|| []` to prevent .slice on undefined --- */}
             <RecentCheckIns
-              guests={checkedInData?.results.slice(0, 3)}
+              guests={(checkedInData?.results || []).slice(0, 3)}
               isLoading={isCheckInLoading}
             />
           </div>

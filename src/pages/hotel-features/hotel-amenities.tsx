@@ -47,7 +47,7 @@ export default function HotelAmenities() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
-  const hotelId = "a3d5501e-c910-4e2e-a0b2-ad616c5910db";
+  const hotelId = "552e27a3-7ac2-4f89-bc80-1349f3198105";
 
   const amenityQueries = useQueries({
     queries: (hotel?.amenities || []).map((amenityId) => ({

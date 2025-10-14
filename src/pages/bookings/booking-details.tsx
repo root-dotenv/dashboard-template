@@ -254,7 +254,7 @@ export default function BookingDetailsPage() {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col lg:flex-row items-start gap-8">
             <div className="w-full lg:w-[35%] xl:w-[30%] flex-shrink-0 space-y-6 lg:sticky lg:top-36">
-              <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-xs">
+              <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-none">
                 <CardHeader>
                   <CardTitle>Guest Profile</CardTitle>
                 </CardHeader>
@@ -291,7 +291,7 @@ export default function BookingDetailsPage() {
                 <img
                   src={roomDetails.image}
                   alt={roomDetails.room_type_name}
-                  className="w-full h-52 object-cover rounded-lg border dark:border-[#1D2939] shadow-xs"
+                  className="w-full h-52 object-cover rounded-lg border dark:border-[#1D2939] shadow-none"
                 />
               )}
             </div>
@@ -320,7 +320,7 @@ export default function BookingDetailsPage() {
                 />
               </div>
 
-              <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-xs">
+              <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-none">
                 <CardHeader>
                   <CardTitle>Booking & Room Details</CardTitle>
                 </CardHeader>
@@ -369,7 +369,7 @@ export default function BookingDetailsPage() {
               </Card>
 
               {(booking.special_requests || booking.service_notes) && (
-                <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-xs">
+                <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-none">
                   <CardHeader>
                     <CardTitle>Additional Information</CardTitle>
                   </CardHeader>
@@ -399,7 +399,7 @@ export default function BookingDetailsPage() {
               )}
 
               {roomDetails && roomDetails.amenities.length > 0 && (
-                <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-xs">
+                <Card className="bg-[#FFF] dark:bg-[#171F2F] border border-[#E4E7EC] dark:border-[#1D2939] shadow-none">
                   <CardHeader>
                     <CardTitle>Room Amenities</CardTitle>
                   </CardHeader>

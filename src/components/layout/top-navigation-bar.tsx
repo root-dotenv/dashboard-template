@@ -1,8 +1,8 @@
 // // src/components/layout/top-navigation-bar.tsx
+
 // import { Search, ChevronDown, BellIcon } from "lucide-react";
 // import { Button } from "@/components/ui/button";
 // import { Notifications } from "@/components/custom/notifications";
-// import { navData } from "@/lib/nav-data";
 // import { useSidebarStore } from "@/store/sidebar-store";
 // import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 // import { BiCog } from "react-icons/bi";
@@ -15,20 +15,30 @@
 // } from "@/components/ui/dropdown-menu";
 // import { UserMenuItems } from "./user-menu-items";
 // import { ThemeToggle } from "../custom/theme-toggle";
+// import { useAuthStore } from "@/store/auth.store";
 
 // export function TopNavigationBar() {
 //   const { toggleSidebar } = useSidebarStore();
+//   const user = useAuthStore((state) => state.user);
 
 //   return (
-//     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b shadow-md bg-[#FFF] px-4 md:px-6 dark:bg-[#101828] dark:border-[#1D2939]">
+//     <header className="flex h-[68px] flex-shrink-0 items-center justify-between border-b bg-[#FFF] px-4 md:px-6 dark:bg-[#101828] dark:border-[#1D2939]">
+//       {/* --- LEFT SECTION --- */}
 //       <div className="flex items-center gap-4">
 //         <button onClick={toggleSidebar} className="p-2">
 //           <TbLayoutSidebarLeftCollapse className="h-5 w-5 text-gray-500 dark:text-[#D0D5DD]" />
 //           <span className="sr-only">Toggle Sidebar</span>
 //         </button>
-//         <div className="relative hidden md:block">
+//         <h1 className="hidden text-[20px] font-bold text-gray-900 dark:text-[#D0D5DD] md:block">
+//           SafariPro Management
+//         </h1>
+//       </div>
+
+//       {/* --- CENTER SECTION --- */}
+//       <div className="flex-1 px-4 md:px-8">
+//         <div className="relative hidden md:block mx-auto max-w-lg">
 //           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-[#98A2B3]" />
-//           <button className="flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-2 pl-9 text-sm text-muted-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-w-[250px] lg:min-w-[400px] dark:bg-[#171F2F] dark:border-[#1D2939] dark:text-[#D0D5DD] dark:placeholder:text-[#5D636E]">
+//           <button className="flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-2 pl-9 text-sm text-muted-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#171F2F] dark:border-[#1D2939] dark:text-[#D0D5DD] dark:placeholder:text-[#5D636E]">
 //             <span>Search or type command...</span>
 //             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 dark:bg-[#101828] dark:border-[#1D2939] dark:text-[#98A2B3]">
 //               <span className="text-xs">⌘</span>K
@@ -37,8 +47,8 @@
 //         </div>
 //       </div>
 
+//       {/* --- RIGHT SECTION --- */}
 //       <div className="flex items-center gap-2 md:gap-4">
-//         {/* --- NEW Theme Toggle Switch --- */}
 //         <ThemeToggle />
 
 //         <DropdownMenu>
@@ -73,40 +83,40 @@
 
 //         <Separator orientation="vertical" className="h-6 dark:bg-[#1D2939]" />
 
-//         <DropdownMenu>
-//           <DropdownMenuTrigger asChild>
-//             <div
-//               role="button"
-//               className="group flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 p-[5px] pr-3 transition-colors hover:bg-gray-100 dark:border-[#1D2939] dark:hover:bg-[#1C2433]"
+//         {user && (
+//           <DropdownMenu>
+//             <DropdownMenuTrigger asChild>
+//               <div
+//                 role="button"
+//                 className="group flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 p-[5px] pr-3 transition-colors hover:bg-gray-100 dark:border-[#1D2939] dark:hover:bg-[#1C2433]"
+//               >
+//                 <Avatar className="h-8 w-8">
+//                   <AvatarImage src={""} alt={user.first_name} />
+//                   <AvatarFallback className="text-[#344054] bg-[#F2F4F7] dark:bg-[#171F2F] dark:text-[#D0D5DD]">
+//                     {user.first_name.charAt(0)}
+//                   </AvatarFallback>
+//                 </Avatar>
+//                 <span className="hidden text-sm font-semibold text-gray-900 dark:text-[#D0D5DD] md:block">
+//                   {user.first_name} {user.last_name}
+//                 </span>
+//                 <ChevronDown className="hidden h-4 w-4 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-[#98A2B3] md:block" />
+//               </div>
+//             </DropdownMenuTrigger>
+//             <DropdownMenuContent
+//               className="w-56 rounded-lg dark:bg-[#101828] dark:border-[#1D2939]"
+//               align="end"
+//               sideOffset={8}
 //             >
-//               <Avatar className="h-8 w-8">
-//                 <AvatarImage
-//                   src={navData.user.avatar}
-//                   alt={navData.user.name}
-//                 />
-//                 <AvatarFallback className="text-[#344054] bg-[#F2F4F7] dark:bg-[#171F2F] dark:text-[#D0D5DD]">
-//                   {navData.user.name.charAt(0)}
-//                 </AvatarFallback>
-//               </Avatar>
-//               <span className="hidden text-sm font-semibold text-gray-900 dark:text-[#D0D5DD] md:block">
-//                 {navData.user.name}
-//               </span>
-//               <ChevronDown className="hidden h-4 w-4 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-[#98A2B3] md:block" />
-//               <span className="sr-only">Toggle user menu</span>
-//             </div>
-//           </DropdownMenuTrigger>
-//           <DropdownMenuContent
-//             className="w-56 rounded-lg dark:bg-[#101828] dark:border-[#1D2939]"
-//             align="end"
-//             sideOffset={8}
-//           >
-//             <UserMenuItems user={navData.user} />
-//           </DropdownMenuContent>
-//         </DropdownMenu>
+//               <UserMenuItems />
+//             </DropdownMenuContent>
+//           </DropdownMenu>
+//         )}
 //       </div>
 //     </header>
 //   );
 // }
+
+// src/components/layout/top-navigation-bar.tsx
 
 import { Search, ChevronDown, BellIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -124,10 +134,12 @@ import {
 import { UserMenuItems } from "./user-menu-items";
 import { ThemeToggle } from "../custom/theme-toggle";
 import { useAuthStore } from "@/store/auth.store";
+import { useCommandSearchStore } from "@/store/command-search-store"; // --- 1. Import the new store
 
 export function TopNavigationBar() {
   const { toggleSidebar } = useSidebarStore();
   const user = useAuthStore((state) => state.user);
+  const { open } = useCommandSearchStore(); // --- 2. Get the open function from our store
 
   return (
     <header className="flex h-[68px] flex-shrink-0 items-center justify-between border-b bg-[#FFF] px-4 md:px-6 dark:bg-[#101828] dark:border-[#1D2939]">
@@ -142,11 +154,15 @@ export function TopNavigationBar() {
         </h1>
       </div>
 
-      {/* --- CENTER SECTION --- */}
+      {/* --- CENTER SECTION (UPDATED) --- */}
       <div className="flex-1 px-4 md:px-8">
         <div className="relative hidden md:block mx-auto max-w-lg">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-[#98A2B3]" />
-          <button className="flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-2 pl-9 text-sm text-muted-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#171F2F] dark:border-[#1D2939] dark:text-[#D0D5DD] dark:placeholder:text-[#5D636E]">
+          {/* --- 3. Update the button --- */}
+          <button
+            onClick={open} // Add the onClick handler
+            className="flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-2 pl-9 text-sm text-muted-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 dark:bg-[#171F2F] dark:border-[#1D2939] dark:text-[#D0D5DD] dark:placeholder:text-[#5D636E]"
+          >
             <span>Search or type command...</span>
             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 dark:bg-[#101828] dark:border-[#1D2939] dark:text-[#98A2B3]">
               <span className="text-xs">⌘</span>K
