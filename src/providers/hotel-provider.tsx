@@ -1,9 +1,9 @@
-// src/providers/hotel-provider.tsx
 import { createContext, useContext, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import hotelClient from "../api/hotel-client";
-// import { useAuthStore } from "@/store/auth.store";
-import type { Hotel } from "@/types/hotel-types";
+import { useAuthStore } from "../store/auth.store"; // --- 1. Corrected import path
+import type { Hotel } from "../types/hotel-types"; // --- 2. Corrected import path
+import { Loader2 } from "lucide-react";
 
 // Define the shape of the context's value
 interface HotelContextType {
@@ -19,10 +19,8 @@ const HotelContext = createContext<HotelContextType | undefined>(undefined);
 
 // Create the Provider Component
 export function HotelProvider({ children }: { children: ReactNode }) {
-  // TODO: Uncomment this part here
-  // const { hotelId } = useAuthStore(); // Get the dynamic hotelId from the auth store
-
-  const hotelId = "552e27a3-7ac2-4f89-bc80-1349f3198105";
+  // Get the dynamic hotelId from the auth store
+  const { hotelId } = useAuthStore();
 
   const {
     data: hotel,
@@ -32,23 +30,17 @@ export function HotelProvider({ children }: { children: ReactNode }) {
     refetch,
   } = useQuery<Hotel, Error>({
     // The queryKey is now dynamic, tied to the hotelId from the store.
-    // TanStack Query will automatically refetch when this ID changes.
     queryKey: ["hotel", hotelId],
     queryFn: async () => {
       // Use the dynamic hotelId in the API request URL.
       const response = await hotelClient.get(`hotels/${hotelId}`);
       return response.data;
     },
-    // The query will only run if a hotelId exists in the auth store.
+    // The query will only run if a hotelId exists.
     enabled: !!hotelId,
-    // Keep the data fresh for 30 minutes before considering it stale.
-    staleTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 30, // Keep data fresh for 30 minutes
+    retry: false, // Don't retry if the first fetch fails
   });
-
-  // --- REMOVED BLOCKING LOGIC ---
-  // The provider no longer blocks rendering on load or error.
-  // It will now always render the children, providing them with the
-  // current loading/error state via the context value.
 
   // Define the value to be passed down through the context
   const value = {
@@ -58,6 +50,19 @@ export function HotelProvider({ children }: { children: ReactNode }) {
     isError,
     refetch: refetch as () => void,
   };
+
+  // If there's no hotelId yet, we can show a loading state for the whole app
+  // This can be useful on initial load while the hotelId is being fetched.
+  if (!hotelId && !isLoading && !isError) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-gray-600">Initializing hotel data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <HotelContext.Provider value={value}>{children}</HotelContext.Provider>

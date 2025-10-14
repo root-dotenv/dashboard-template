@@ -81,7 +81,6 @@ const PersonalInfoTab = () => {
   const {
     register,
     handleSubmit,
-    setValue,
     reset,
     formState: { errors, isDirty },
   } = useForm<ProfileFormData>({

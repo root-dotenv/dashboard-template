@@ -1,13 +1,30 @@
+// src/store/auth.store.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { AxiosError } from "axios";
-import authClient from "@/api/auth-client";
+import authClient from "../api/auth-client";
+import vendorClient from "../api/vendor-client";
+import hotelClient from "../api/hotel-client";
 import { toastError, toastSuccess } from "@/utils/toast";
 
 // --- Type Definitions ---
 export interface LoginCredentials {
   identifier: string; // Can be email or phone
   password: string;
+}
+
+export interface UpdateProfileCredentials {
+  first_name: string;
+  last_name: string;
+  middle_name?: string;
+  phone_number: string;
+  email: string;
+  date_of_birth: string;
+}
+
+export interface PasswordChangeCredentials {
+  current_password: string;
+  new_password: string;
 }
 
 export interface UserProfile {
@@ -25,24 +42,37 @@ export interface UserProfile {
 // --- State and Actions Interface ---
 interface AuthState {
   userProfile: UserProfile | null;
+  hotelId: string | null; // --- ADDED: hotelId to state ---
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  isRefreshing: boolean; // To prevent concurrent refresh requests
+  isRefreshing: boolean;
   error: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   fetchUserProfile: () => Promise<void>;
+  fetchUserHotel: (profileId: string) => Promise<void>; // --- ADDED: Action to fetch hotel ---
+  updateUserProfile: (
+    credentials: UpdateProfileCredentials
+  ) => Promise<boolean>; // --- ADDED: Action to update profile ---
+  changePassword: (credentials: PasswordChangeCredentials) => Promise<boolean>; // --- ADDED: Action to change password ---
   refreshTokenAction: () => Promise<string | null>;
 }
 
 // --- Initial State ---
 const initialState: Omit<
   AuthState,
-  "login" | "logout" | "fetchUserProfile" | "refreshTokenAction"
+  | "login"
+  | "logout"
+  | "fetchUserProfile"
+  | "fetchUserHotel"
+  | "refreshTokenAction"
+  | "updateUserProfile"
+  | "changePassword"
 > = {
   userProfile: null,
+  hotelId: null, // --- ADDED: Initial hotelId ---
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
@@ -57,31 +87,19 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       ...initialState,
 
-      // --- Login Action ---
       login: async (credentials) => {
         set({ isLoading: true, error: null });
         try {
-          // 1. Get tokens from the login endpoint
           const tokenResponse = await authClient.post(
             "/auth/login",
             credentials
           );
           const { access_token, refresh_token } = tokenResponse.data;
+          set({ accessToken: access_token, refreshToken: refresh_token });
 
-          set({
-            accessToken: access_token,
-            refreshToken: refresh_token,
-          });
-
-          // 2. Fetch the user's profile using the new access token
           await get().fetchUserProfile();
 
-          // 3. Finalize state
-          set({
-            isAuthenticated: true,
-            isLoading: false,
-          });
-
+          set({ isAuthenticated: true, isLoading: false });
           toastSuccess({
             title: "Login Successful!",
             description: "Redirecting to your dashboard...",
@@ -92,35 +110,93 @@ export const useAuthStore = create<AuthState>()(
             title: "Authentication Failed",
             description: errorMessage,
           });
-          set({ ...initialState, error: errorMessage }); // Reset state on failure
+          set({ ...initialState, error: errorMessage });
           throw new Error(errorMessage);
         }
       },
 
-      // --- Fetch User Profile Action ---
       fetchUserProfile: async () => {
         try {
           const response = await authClient.get("/auth/profile");
-          // The profile data is nested inside a 'profile' object in the response
           const { profile } = response.data;
           set({ userProfile: profile });
+          if (profile?.id) {
+            await get().fetchUserHotel(profile.id);
+          }
         } catch (error) {
           console.error("Failed to fetch user profile:", error);
-          // If profile fetch fails, it could be a stale/invalid token, so logout.
           await get().logout();
         }
       },
 
-      // --- Token Refresh Action ---
+      fetchUserHotel: async (profileId: string) => {
+        try {
+          const vendorResponse = await vendorClient.get(
+            `/vendors?user_id=${profileId}`
+          );
+          if (vendorResponse.data.count > 0 && vendorResponse.data.results[0]) {
+            const vendorId = vendorResponse.data.results[0].id;
+            const hotelResponse = await hotelClient.get(
+              `/hotels/?vendor_id=${vendorId}`
+            );
+            if (hotelResponse.data.count > 0 && hotelResponse.data.results[0]) {
+              const hotelId = hotelResponse.data.results[0].id;
+              set({ hotelId: hotelId });
+            } else {
+              set({ hotelId: null });
+            }
+          } else {
+            set({ hotelId: null });
+          }
+        } catch (error) {
+          console.error("Error fetching user's hotel:", error);
+        }
+      },
+
+      updateUserProfile: async (credentials) => {
+        set({ isLoading: true, error: null });
+        try {
+          await authClient.put("/members/profile/", credentials);
+          toastSuccess({
+            title: "Profile Updated",
+            description: "Your information has been saved.",
+          });
+          await get().fetchUserProfile();
+          set({ isLoading: false });
+          return true;
+        } catch (error) {
+          const errorMessage = parseAxiosError(error);
+          toastError({ title: "Update Failed", description: errorMessage });
+          set({ isLoading: false, error: errorMessage });
+          return false;
+        }
+      },
+
+      changePassword: async (credentials) => {
+        set({ isLoading: true, error: null });
+        try {
+          await authClient.post("/auth/change-password", credentials);
+          toastSuccess({
+            title: "Password Updated",
+            description: "Please log in again with your new password.",
+          });
+          await get().logout();
+          return true;
+        } catch (error) {
+          const errorMessage = parseAxiosError(error);
+          toastError({ title: "Update Failed", description: errorMessage });
+          set({ isLoading: false, error: errorMessage });
+          return false;
+        }
+      },
+
       refreshTokenAction: async () => {
         const currentRefreshToken = get().refreshToken;
         if (!currentRefreshToken) {
-          get().logout();
+          await get().logout();
           return null;
         }
         if (get().isRefreshing) {
-          // If a refresh is already happening, this prevents a race condition.
-          // It waits until the ongoing refresh is done and returns the new token.
           return new Promise((resolve) => {
             const interval = setInterval(() => {
               if (!get().isRefreshing) {
@@ -144,55 +220,48 @@ export const useAuthStore = create<AuthState>()(
           return access_token;
         } catch (error) {
           console.error("Failed to refresh token:", error);
-          get().logout(); // Logout if refresh token is invalid/expired
+          await get().logout();
           return null;
         } finally {
           set({ isRefreshing: false });
         }
       },
 
-      // --- Logout Action ---
       logout: async () => {
         const token = get().accessToken;
         set({ isLoading: true });
         try {
-          if (token) {
-            await authClient.post("/auth/logout");
-          }
+          if (token) await authClient.post("/auth/logout");
         } catch (error) {
           console.error("Logout API call failed, cleaning up locally:", error);
         } finally {
           set({ ...initialState });
-          // Force a redirect to the login page after state is cleared
           window.location.replace("/login");
         }
       },
     }),
     {
-      name: "auth-storage", // Key for localStorage
+      name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      // Only persist these specific fields to keep the user logged in
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
-        userProfile: state.userProfile, // Persist profile to avoid re-fetching on every load
+        userProfile: state.userProfile,
+        hotelId: state.hotelId, // --- ADDED: Persist hotelId ---
       }),
     }
   )
 );
 
-// --- Helper function to parse errors from Axios ---
 function parseAxiosError(error: unknown): string {
   if (error instanceof AxiosError && error.response?.data) {
     const data = error.response.data;
-    // The API returns errors in 'message' or 'detail' properties
     return data.message || data.detail || "An unexpected error occurred.";
   }
   return "An unexpected server error occurred. Please try again.";
 }
 
-// --- Custom hook to easily access user IDs ---
 export const useUserIds = () => {
   return useAuthStore((state) => ({
     id: state.userProfile?.id,
