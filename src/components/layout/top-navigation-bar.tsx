@@ -117,7 +117,6 @@
 // }
 
 // src/components/layout/top-navigation-bar.tsx
-
 import { Search, ChevronDown, BellIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Notifications } from "@/components/custom/notifications";
@@ -133,13 +132,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserMenuItems } from "./user-menu-items";
 import { ThemeToggle } from "../custom/theme-toggle";
-import { useAuthStore } from "@/store/auth.store";
-import { useCommandSearchStore } from "@/store/command-search-store"; // --- 1. Import the new store
+import { useAuthStore } from "../../store/auth.store";
+import { useCommandSearchStore } from "@/store/command-search-store";
 
 export function TopNavigationBar() {
   const { toggleSidebar } = useSidebarStore();
-  const user = useAuthStore((state) => state.user);
-  const { open } = useCommandSearchStore(); // --- 2. Get the open function from our store
+  const { userProfile } = useAuthStore();
+  const { open } = useCommandSearchStore();
 
   return (
     <header className="flex h-[68px] flex-shrink-0 items-center justify-between border-b bg-[#FFF] px-4 md:px-6 dark:bg-[#101828] dark:border-[#1D2939]">
@@ -154,13 +153,12 @@ export function TopNavigationBar() {
         </h1>
       </div>
 
-      {/* --- CENTER SECTION (UPDATED) --- */}
+      {/* --- CENTER SECTION --- */}
       <div className="flex-1 px-4 md:px-8">
         <div className="relative hidden md:block mx-auto max-w-lg">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-[#98A2B3]" />
-          {/* --- 3. Update the button --- */}
           <button
-            onClick={open} // Add the onClick handler
+            onClick={open}
             className="flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-2 pl-9 text-sm text-muted-foreground ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 dark:bg-[#171F2F] dark:border-[#1D2939] dark:text-[#D0D5DD] dark:placeholder:text-[#5D636E]"
           >
             <span>Search or type command...</span>
@@ -207,7 +205,7 @@ export function TopNavigationBar() {
 
         <Separator orientation="vertical" className="h-6 dark:bg-[#1D2939]" />
 
-        {user && (
+        {userProfile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div
@@ -215,13 +213,13 @@ export function TopNavigationBar() {
                 className="group flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 p-[5px] pr-3 transition-colors hover:bg-gray-100 dark:border-[#1D2939] dark:hover:bg-[#1C2433]"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={""} alt={user.first_name} />
+                  <AvatarImage src={""} alt={userProfile.first_name} />
                   <AvatarFallback className="text-[#344054] bg-[#F2F4F7] dark:bg-[#171F2F] dark:text-[#D0D5DD]">
-                    {user.first_name.charAt(0)}
+                    {userProfile.first_name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden text-sm font-semibold text-gray-900 dark:text-[#D0D5DD] md:block">
-                  {user.first_name} {user.last_name}
+                  {userProfile.first_name} {userProfile.last_name}
                 </span>
                 <ChevronDown className="hidden h-4 w-4 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180 dark:text-[#98A2B3] md:block" />
               </div>

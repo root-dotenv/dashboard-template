@@ -7,34 +7,33 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthStore } from "../../store/auth.store";
 import { useNavigate } from "react-router-dom";
 
 export function UserMenuItems() {
-  const { user, logout } = useAuthStore();
+  const { userProfile, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout = async () => {
+    await logout();
   };
 
-  if (!user) return null;
+  if (!userProfile) return null;
 
   return (
     <>
       <DropdownMenuLabel className="p-0 font-normal">
         <div className="flex items-center gap-3 p-2 text-left">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={""} alt={user.first_name} />
-            <AvatarFallback>{user.first_name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={""} alt={userProfile.first_name} />
+            <AvatarFallback>{userProfile.first_name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-medium dark:text-[#D0D5DD]">
-              {user.first_name} {user.last_name}
+              {userProfile.first_name} {userProfile.last_name}
             </span>
             <span className="truncate text-xs text-muted-foreground dark:text-[#98A2B3]">
-              {user.email}
+              {userProfile.email}
             </span>
           </div>
         </div>
@@ -45,7 +44,10 @@ export function UserMenuItems() {
           <Sparkles className="mr-2 h-4 w-4 dark:text-[#98A2B3]" />
           <span>Upgrade to Pro</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="dark:focus:bg-[#1C2433]">
+        <DropdownMenuItem
+          onClick={() => navigate("/profile")}
+          className="dark:focus:bg-[#1C2433]"
+        >
           <BadgeCheck className="mr-2 h-4 w-4 dark:text-[#98A2B3]" />
           <span>Account</span>
         </DropdownMenuItem>

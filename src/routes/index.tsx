@@ -31,6 +31,7 @@ import DataLoadingError from "@/pages/error/application-error-page";
 import Payouts from "@/pages/billings/payouts";
 import Charges from "@/pages/billings/charges";
 import Invoices from "@/pages/billings/invoices";
+import UserProfilePage from "@/pages/authentication/user-profile";
 
 const RootLayout = () => {
   return (
@@ -73,7 +74,7 @@ export const router = createBrowserRouter([
             element: <DashboardLayout />,
             children: [
               { index: true, element: <MainHomePage /> },
-              { path: "profile", element: <p>Profile page</p> },
+              { path: "profile", element: <UserProfilePage /> },
               { path: "hotel/hotel-details", element: <MainOverview /> },
               {
                 path: "hotel/customize-hotel",
