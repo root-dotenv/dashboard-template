@@ -88,6 +88,7 @@ import ErrorPage from "@/components/custom/error-page";
 import bookingClient from "@/api/booking-client";
 import { StatCard } from "@/components/custom/StatCard"; // New Component Import
 import { BiWalk } from "react-icons/bi";
+import { useAuthStore } from "@/store/auth.store";
 
 // --- Type Definitions ---
 interface Booking {
@@ -173,7 +174,7 @@ const fetchBookingCount = async (
 export default function AllBookings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const hotelId = "a3d5501e-c910-4e2e-a0b2-ad616c5910db";
+  const { hotelId } = useAuthStore();
 
   // --- State ---
   const [bookingTypeFilter, setBookingTypeFilter] = useState<
@@ -197,19 +198,19 @@ export default function AllBookings() {
   // --- New Stats Queries ---
   const { data: allBookingsStats, isLoading: isLoadingAllStats } = useQuery({
     queryKey: ["bookingStats", hotelId, "all"],
-    queryFn: () => fetchBookingCount(hotelId),
+    queryFn: () => fetchBookingCount(hotelId!),
     enabled: !!hotelId,
   });
   const { data: onlineBookingsStats, isLoading: isLoadingOnlineStats } =
     useQuery({
       queryKey: ["bookingStats", hotelId, "online"],
-      queryFn: () => fetchBookingCount(hotelId, "Online"),
+      queryFn: () => fetchBookingCount(hotelId!, "Online"),
       enabled: !!hotelId,
     });
   const { data: physicalBookingsStats, isLoading: isLoadingPhysicalStats } =
     useQuery({
       queryKey: ["bookingStats", hotelId, "physical"],
-      queryFn: () => fetchBookingCount(hotelId, "Physical"),
+      queryFn: () => fetchBookingCount(hotelId!, "Physical"),
       enabled: !!hotelId,
     });
 

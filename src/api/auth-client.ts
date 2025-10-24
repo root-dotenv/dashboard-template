@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/store/auth.store";
 
 // The base URL for the authentication and members service.
-const baseURL = "http://vendor.safaripro.net:8001/api/v1";
+const baseURL = "https://sso.safaripro.net/api/v1";
 
 const authClient = axios.create({
   baseURL: baseURL,

@@ -93,6 +93,7 @@ import hotelClient from "@/api/hotel-client";
 import { formatNumberWithOrdinal } from "@/utils/utils";
 import { StatCard } from "@/components/custom/StatCard";
 import { Slider } from "@/components/ui/slider";
+import { useAuthStore } from "@/store/auth.store"; // --- 1. Import auth store ---
 
 // --- Type Definitions ---
 interface Room {
@@ -172,7 +173,7 @@ const getAvailabilityColor = (status: string) => {
 export default function HotelRooms() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const hotelId = "552e27a3-7ac2-4f89-bc80-1349f3198105";
+  const { hotelId } = useAuthStore(); // --- 2. Get hotelId from store ---
 
   // --- State ---
   const [statusFilter, setStatusFilter] = useState<
@@ -194,7 +195,6 @@ export default function HotelRooms() {
   const [isExporting, setIsExporting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // --- Sync slider UI with main filter state ---
   useEffect(() => {
     if (priceRangeFilter === "") {
       setPriceSliderValue([MIN_PRICE, MAX_PRICE]);
@@ -215,7 +215,7 @@ export default function HotelRooms() {
   } = useQuery<PaginatedRoomsResponse>({
     queryKey: [
       "rooms",
-      hotelId,
+      hotelId, // --- 3. Add hotelId to queryKey ---
       statusFilter,
       pagination.pageIndex,
       pagination.pageSize,
@@ -225,7 +225,7 @@ export default function HotelRooms() {
       priceRangeFilter,
     ],
     queryFn: async () => {
-      const params = new URLSearchParams({ hotel_id: hotelId! });
+      const params = new URLSearchParams({ hotel_id: hotelId! }); // --- 4. Use dynamic hotelId ---
       const hasSpecificFilters =
         columnFilters.length > 0 || priceRangeFilter !== "";
 
@@ -260,7 +260,7 @@ export default function HotelRooms() {
       return response.data;
     },
     keepPreviousData: true,
-    enabled: !!hotelId,
+    enabled: !!hotelId, // --- 5. Enable query only when hotelId is available ---
   });
 
   const { data: roomTypesData, isLoading: isLoadingRoomTypes } = useQuery<
@@ -274,8 +274,8 @@ export default function HotelRooms() {
   const { data: hotelData, isLoading: isLoadingHotel } =
     useQuery<HotelStatsData>({
       queryKey: ["hotelDetails", hotelId],
-      queryFn: async () => (await hotelClient.get(`/hotels/${hotelId}/`)).data,
-      enabled: !!hotelId,
+      queryFn: async () => (await hotelClient.get(`/hotels/${hotelId}/`)).data, // --- 6. Use dynamic hotelId ---
+      enabled: !!hotelId, // --- 7. Enable query only when hotelId is available ---
     });
 
   const roomTypesMap = useMemo(() => {
@@ -323,7 +323,7 @@ export default function HotelRooms() {
     toast.info(`Exporting ${totalRoomsCount} rooms...`);
     try {
       const params = new URLSearchParams({
-        hotel_id: hotelId!,
+        hotel_id: hotelId!, // --- 8. Use dynamic hotelId for export ---
         page_size: String(totalRoomsCount),
       });
 
@@ -604,7 +604,8 @@ export default function HotelRooms() {
 
   if (isError) return <ErrorPage error={error as Error} onRetry={refetch} />;
 
-  const isLoading = isLoadingRooms || isLoadingRoomTypes || isLoadingHotel;
+  const isLoading =
+    isLoadingRooms || isLoadingRoomTypes || isLoadingHotel || !hotelId;
 
   const TABS_CONFIG = [
     {
@@ -1091,7 +1092,6 @@ export default function HotelRooms() {
 }
 
 // --- Reusable Sub-components ---
-// ... (no changes to SortableHeader or RowActions)
 const SortableHeader = ({
   column,
   children,

@@ -1,4 +1,4 @@
-// Updated Step4_ReceivePayment.tsx with debugging and fallback logic
+// src/pages/bookings/components/Step4_ReceivePayment.tsx
 "use client";
 import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
@@ -10,7 +10,7 @@ import bookingClient from "@/api/booking-client";
 import { toast } from "sonner";
 import {
   type UpdatePaymentPayload,
-  type BookingDetails,
+  type CurrencyConversionResponse,
 } from "./booking-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Info, Banknote, ShieldCheck, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  Info,
+  Banknote,
+  ShieldCheck,
+  RefreshCw,
+  AlertCircle,
+  ArrowLeft, // Added ArrowLeft icon
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const paymentSchema = yup.object({
   amountReceived: yup
@@ -50,14 +59,6 @@ export default function Step4_ReceivePayment() {
   const { bookingDetails, createdBooking, setStep, setBookingDetails } =
     useBookingStore();
 
-  // Enhanced debugging
-  console.log("=== STEP 4 DEBUG INFO ===");
-  console.log("bookingDetails from store:", bookingDetails);
-  console.log("createdBooking from store:", createdBooking);
-  console.log("bookingDetails ID:", bookingDetails?.id);
-  console.log("createdBooking ID:", createdBooking?.id);
-  console.log("========================");
-
   const queryClient = useQueryClient();
   const [isConfirmed, setIsConfirmed] = useState(false);
 
@@ -66,54 +67,70 @@ export default function Step4_ReceivePayment() {
     mode: "onChange",
   });
 
-  // Fallback: If bookingDetails is missing but createdBooking exists, fetch the details
-  const shouldFetchBookingDetails = !bookingDetails && !!createdBooking?.id;
-
   const {
-    data: fetchedBookingDetails,
+    data: fetchedConversionData,
     isLoading: isFetchingDetails,
     isError: fetchError,
     error: fetchErrorMessage,
-  } = useQuery<BookingDetails>({
-    queryKey: ["bookingDetails", createdBooking?.id],
+    refetch: refetchConversion,
+  } = useQuery<CurrencyConversionResponse>({
+    queryKey: ["bookingCurrencyConversion", createdBooking?.id],
     queryFn: async () => {
-      console.log("Fetching booking details for ID:", createdBooking!.id);
       const response = await bookingClient.get(
-        `/bookings/${createdBooking!.id}`
+        `/bookings/${createdBooking!.id}/currency-conversions`
       );
-      console.log("Fetched booking details:", response.data);
       return response.data;
     },
-    enabled: shouldFetchBookingDetails,
-    onSuccess: (data) => {
-      console.log("Setting booking details in store:", data);
-      setBookingDetails(data);
+    enabled: !!createdBooking?.id,
+    onSuccess: (response) => {
+      setBookingDetails(response.data.booking);
     },
     retry: 2,
+    refetchOnWindowFocus: false, // Avoid refetching just on focus
   });
 
-  // Use either existing bookingDetails or freshly fetched ones
-  const currentBookingDetails = bookingDetails || fetchedBookingDetails;
+  const currentBookingDetails =
+    bookingDetails || fetchedConversionData?.data.booking;
 
   const currencyConversionDetails = useMemo(() => {
-    if (!currentBookingDetails) return null;
-    const conversionAction = currentBookingDetails.status_history.find(
-      (action) => action.action === "currency_conversion"
+    const conversions = fetchedConversionData?.data.conversions;
+    if (!conversions) return null;
+    return (
+      conversions.find(
+        (c) => c.conversion_type === "amount_required_reference"
+      ) || null
     );
-    console.log("Currency conversion details:", conversionAction?.details);
-    return conversionAction?.details || null;
-  }, [currentBookingDetails]);
+  }, [fetchedConversionData]);
 
   const mutation = useMutation({
     mutationFn: (payload: { bookingId: string; data: UpdatePaymentPayload }) =>
       bookingClient.patch(`/bookings/${payload.bookingId}`, payload.data),
     onSuccess: (response) => {
       toast.success("Payment recorded successfully!");
+      // Update query data for /currency-conversions to reflect payment
+      queryClient.setQueryData(
+        ["bookingCurrencyConversion", currentBookingDetails?.id],
+        (oldData: CurrencyConversionResponse | undefined) => {
+          if (!oldData) return;
+          // Assuming the PATCH response is the updated BookingDetails
+          const updatedBooking = response.data as BookingDetails;
+          return {
+            ...oldData,
+            data: {
+              ...oldData.data,
+              booking: updatedBooking, // Update the booking within the data structure
+            },
+          };
+        }
+      );
+      // Also update the simple bookingDetails query if it exists
       queryClient.setQueryData(
         ["bookingDetails", currentBookingDetails?.id],
         response.data
       );
+      // Invalidate broader queries if needed
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      setBookingDetails(response.data); // Ensure store has the absolute latest
       setStep(5);
     },
     onError: (error) => {
@@ -127,7 +144,7 @@ export default function Step4_ReceivePayment() {
       toast.error("Booking details are missing. Cannot proceed.");
       return;
     }
-    if (!currencyConversionDetails?.converted_required) {
+    if (!currencyConversionDetails?.converted_amount) {
       toast.error("Final TZS amount has not been calculated yet.", {
         description: "Please go back to Step 3 and refresh.",
       });
@@ -140,26 +157,24 @@ export default function Step4_ReceivePayment() {
       amount_paid: String(data.amountReceived),
     };
 
-    console.log("Submitting payment with payload:", payload);
     mutation.mutate({ bookingId: currentBookingDetails.id, data: payload });
   };
 
-  // Show loading state while fetching missing booking details
-  if (isFetchingDetails) {
+  if (isFetchingDetails && !currentBookingDetails) {
+    // Show loader only if details aren't already in store
     return (
       <div className="flex flex-col items-center justify-center text-center py-20">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-          Loading Booking Details...
+          Loading Payment Details...
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Fetching the latest booking information.
+          Fetching the latest conversion rates and totals.
         </p>
       </div>
     );
   }
 
-  // Show error if fetching failed
   if (fetchError) {
     return (
       <div className="text-red-600 bg-red-50 dark:bg-red-900/20 p-6 rounded-lg flex flex-col items-center text-center">
@@ -170,14 +185,18 @@ export default function Step4_ReceivePayment() {
         <p className="mb-4">{fetchErrorMessage?.message}</p>
         <div className="flex items-center gap-4 mt-4">
           <Button onClick={() => setStep(3)} variant="outline">
-            Go Back to Step 3
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Confirmation
           </Button>
           <Button
-            onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["bookingDetails"] })
-            }
+            onClick={() => refetchConversion()}
+            disabled={isFetchingDetails}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw
+              className={cn(
+                "mr-2 h-4 w-4",
+                isFetchingDetails && "animate-spin"
+              )}
+            />
             Retry
           </Button>
         </div>
@@ -185,8 +204,8 @@ export default function Step4_ReceivePayment() {
     );
   }
 
-  // Show error if no booking details and no createdBooking to fetch from
   if (!currentBookingDetails && !createdBooking) {
+    // This case might be less likely now with fetching, but keep as safety net
     return (
       <div className="text-center py-16 text-gray-500">
         <Info className="mx-auto h-12 w-12 text-red-400 mb-4" />
@@ -195,45 +214,34 @@ export default function Step4_ReceivePayment() {
           No booking details found. Please start the booking process from Step
           1.
         </p>
-        <div className="flex justify-center gap-4 mt-4">
-          <Button onClick={() => setStep(1)} variant="outline">
-            Go Back to Step 1
-          </Button>
-          <Button onClick={() => setStep(3)}>Try Step 3 Again</Button>
-        </div>
+        <Button onClick={() => setStep(1)} variant="outline" className="mt-4">
+          Go Back to Step 1
+        </Button>
       </div>
     );
   }
 
-  // If we still don't have booking details at this point, show error
   if (!currentBookingDetails) {
+    // Should be covered by loading/error state, but good fallback
     return (
       <div className="text-center py-16 text-gray-500">
         <Info className="mx-auto h-12 w-12 text-red-400 mb-4" />
         <p className="font-semibold">Missing Booking Details</p>
         <p>Could not load the booking details. Please go back.</p>
         <Button onClick={() => setStep(3)} className="mt-4">
-          Go Back to Step 3
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Confirmation
         </Button>
       </div>
     );
   }
 
-  const finalAmountUSD = currentBookingDetails.billing_meta_data?.final_amount;
-  const finalAmountTZS = currencyConversionDetails?.converted_required;
+  const finalAmountUSD =
+    currentBookingDetails.billing_meta_data?.calculation_breakdown
+      ?.final_amount;
+  const finalAmountTZS = currencyConversionDetails?.converted_amount;
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Debug info panel - remove in production */}
-      <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h4 className="font-semibold text-yellow-800">Debug Info:</h4>
-        <p className="text-sm text-yellow-700">
-          Booking ID: {currentBookingDetails.id} | Status:{" "}
-          {currentBookingDetails.booking_status} | Currency Conversion:{" "}
-          {currencyConversionDetails ? "✓" : "✗"}
-        </p>
-      </div>
-
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Receive Cash Payment</CardTitle>
@@ -254,13 +262,19 @@ export default function Step4_ReceivePayment() {
               <p className="text-sm text-blue-800 dark:text-blue-300">
                 Total to be Paid (TZS)
               </p>
-              {finalAmountTZS ? (
+              {finalAmountTZS !== undefined && finalAmountTZS !== null ? ( // Check if value exists
                 <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
                   {new Intl.NumberFormat("en-US").format(finalAmountTZS)} TZS
                 </p>
               ) : (
-                <div className="text-sm text-amber-600 font-semibold pt-2">
-                  Pending Calculation... <br /> (Go back and refresh)
+                <div className="flex items-center justify-center pt-2">
+                  {isFetchingDetails ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
+                  ) : (
+                    <span className="text-sm text-amber-600 font-semibold">
+                      Unavailable
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -332,7 +346,7 @@ export default function Step4_ReceivePayment() {
                   variant="outline"
                   onClick={() => setStep(3)}
                 >
-                  Back to Confirmation
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Confirmation
                 </Button>
                 <Button
                   type="submit"
@@ -340,7 +354,8 @@ export default function Step4_ReceivePayment() {
                     !isConfirmed ||
                     !form.formState.isValid ||
                     mutation.isPending ||
-                    !finalAmountTZS
+                    finalAmountTZS === undefined ||
+                    finalAmountTZS === null // Disable if TZS amount is missing
                   }
                 >
                   {mutation.isPending && (

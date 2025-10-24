@@ -119,11 +119,11 @@ export const router = createBrowserRouter([
               },
               {
                 path: "house-keeping/inventory-categories",
-                element: <InventoryItems />,
+                element: <InventoryCategories />,
               },
               {
                 path: "house-keeping/inventory-items",
-                element: <InventoryCategories />,
+                element: <InventoryItems />,
               },
               {
                 path: "house-keeping/event-space-types",

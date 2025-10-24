@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Added RadioGroup
 import {
   Loader2,
   User,
@@ -44,8 +45,11 @@ import {
   Users,
   Baby,
   Info,
+  Banknote, // Icon for Cash
+  Smartphone, // Icon for Mobile
 } from "lucide-react";
 
+// --- UPDATED: Added payment_method to schema ---
 const guestDetailsSchema = yup.object({
   full_name: yup.string().required("Full name is required."),
   email: yup
@@ -69,6 +73,10 @@ const guestDetailsSchema = yup.object({
     .min(0)
     .required()
     .typeError("Must be a number"),
+  payment_method: yup // Added payment_method validation
+    .string()
+    .oneOf(["Cash", "Mobile"], "Please select a payment method.")
+    .required("Payment method is required."),
   service_notes: yup.string().optional(),
   special_requests: yup.string().optional(),
 });
@@ -89,13 +97,14 @@ export default function Step2_GuestDetails() {
 
   const form = useForm<GuestDetailsFormData>({
     resolver: yupResolver(guestDetailsSchema),
-    mode: "onBlur",
+    mode: "onBlur", // Changed to onBlur for better UX with radio/select
     defaultValues: {
       number_of_guests: 1,
       number_of_children: 0,
       number_of_infants: 0,
       service_notes: "",
       special_requests: "",
+      payment_method: undefined, // Default to undefined
     },
   });
 
@@ -104,16 +113,12 @@ export default function Step2_GuestDetails() {
     Error,
     CreateBookingPayload
   >({
-    // The mutation key is often used for query invalidation, not typically for constructing URLs.
     mutationKey: ["createBooking"],
     mutationFn: (payload) =>
       bookingClient.post("/bookings/web-create", payload),
-
-    // Inside useMutation in Step2_GuestDetails.tsx
     onSuccess: (response) => {
-      // Renamed to 'response' for clarity
       toast.success("Booking draft created successfully!");
-      setCreatedBooking(response.data); // <-- FIX: Pass the nested data object
+      setCreatedBooking(response.data);
       setStep(3);
     },
     onError: (error) => {
@@ -134,12 +139,17 @@ export default function Step2_GuestDetails() {
       2
     );
 
+    // --- UPDATED: Payload construction includes payment_method ---
     const payload: CreateBookingPayload = {
-      ...data,
-      // --- FIX: Convert numeric fields to strings to match API expectations ---
+      full_name: data.full_name,
+      email: data.email,
+      phone_number: data.phone_number,
+      address: data.address,
       number_of_guests: String(data.number_of_guests),
       number_of_children: String(data.number_of_children),
       number_of_infants: String(data.number_of_infants),
+      service_notes: data.service_notes || "No",
+      special_requests: data.special_requests || "No",
       amount_required,
       property_item_type: selectedRoom.room_type_name,
       start_date: format(startDate, "yyyy-MM-dd"),
@@ -147,16 +157,15 @@ export default function Step2_GuestDetails() {
       microservice_item_id: hotel.id,
       booking_type: "Physical",
       booking_status: "Processing",
-      payment_method: "Cash",
+      payment_method: data.payment_method as "Cash" | "Mobile", // Get selected method
     };
 
-    // --- ADDED: Console logs for debugging as requested ---
     const fullUrl = `${bookingClient.defaults.baseURL}/bookings/web-create`;
     console.log("--- Debugging Booking Creation ---");
     console.log("Full Request URL:", fullUrl);
     console.log("Request Payload:", payload);
 
-    setBookingPayload(payload);
+    setBookingPayload(payload); // Consider if you still need this in store
     mutation.mutate(payload);
   };
 
@@ -180,14 +189,15 @@ export default function Step2_GuestDetails() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       <Card className="lg:col-span-2 shadow-none bg-[#FFF]">
         <CardHeader>
-          <CardTitle>Guest Information</CardTitle>
+          <CardTitle>Guest Information & Payment</CardTitle>
           <CardDescription>
-            Enter the primary guest's details for this booking.
+            Enter the primary guest's details and select the payment method.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Guest Details Fields (name, email, phone, address) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -258,6 +268,7 @@ export default function Step2_GuestDetails() {
 
               <Separator />
 
+              {/* Occupancy Fields (guests, children, infants) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -300,6 +311,53 @@ export default function Step2_GuestDetails() {
                 />
               </div>
 
+              <Separator />
+
+              {/* --- ADDED: Payment Method Selection --- */}
+              <FormField
+                control={form.control}
+                name="payment_method"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel className="text-base font-semibold">
+                      Payment Method
+                    </FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1 md:flex-row md:space-y-0 md:space-x-4"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 flex-1 cursor-pointer hover:bg-accent hover:text-accent-foreground has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+                          <FormControl>
+                            <RadioGroupItem value="Cash" />
+                          </FormControl>
+                          <FormLabel className="font-normal flex items-center gap-2 cursor-pointer">
+                            <Banknote className="h-5 w-5 text-green-600" /> Pay
+                            with Cash
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 flex-1 cursor-pointer hover:bg-accent hover:text-accent-foreground has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50">
+                          <FormControl>
+                            <RadioGroupItem value="Mobile" />
+                          </FormControl>
+                          <FormLabel className="font-normal flex items-center gap-2 cursor-pointer">
+                            <Smartphone className="h-5 w-5 text-blue-600" /> Pay
+                            with Mobile
+                          </FormLabel>
+                        </FormItem>
+                        {/* --- FIX: Corrected closing tag --- */}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* --- End Payment Method --- */}
+
+              <Separator />
+
+              {/* Optional Notes Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -335,6 +393,7 @@ export default function Step2_GuestDetails() {
                 />
               </div>
 
+              {/* Confirmation Checkbox */}
               <div className="items-top flex space-x-2 pt-4">
                 <Checkbox
                   id="confirm-details"
@@ -355,6 +414,7 @@ export default function Step2_GuestDetails() {
                 </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex justify-between items-center pt-4">
                 <Button
                   type="button"
@@ -366,7 +426,11 @@ export default function Step2_GuestDetails() {
                 <Button
                   variant={"main"}
                   type="submit"
-                  disabled={!isConfirmed || mutation.isPending}
+                  disabled={
+                    !isConfirmed ||
+                    mutation.isPending ||
+                    !form.formState.isValid // Added form validity check
+                  }
                 >
                   {mutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -379,6 +443,7 @@ export default function Step2_GuestDetails() {
         </CardContent>
       </Card>
 
+      {/* Booking Summary Sidebar */}
       <div className="lg:col-span-1">
         <Card className="sticky top-28 shadow-sm">
           <CardHeader>

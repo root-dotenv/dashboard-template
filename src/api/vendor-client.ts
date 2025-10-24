@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useAuthStore } from "@/store/auth.store";
 
-const baseURL = "http://vendor.safaripro.net/api/v1";
+const baseURL = "https://vendor.safaripro.net/api/v1";
 
 const vendorClient = axios.create({
   baseURL: baseURL,

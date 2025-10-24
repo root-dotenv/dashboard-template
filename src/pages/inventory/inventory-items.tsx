@@ -26,6 +26,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   Search,
+  AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,11 +86,26 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { IoRefreshOutline } from "react-icons/io5";
-import ErrorPage from "@/components/custom/error-page";
-import hotelClient from "../../api/hotel-client";
-import { useHotel } from "../../providers/hotel-provider";
+import hotelClient from "@/api/hotel-client";
+import { useHotel } from "@/providers/hotel-provider";
 
-// Type Definitions
+// --- Local Error Page Component to resolve dependency issue ---
+const ErrorPageComponent = ({
+  error,
+  onRetry,
+}: {
+  error: Error;
+  onRetry: () => void;
+}) => (
+  <div className="flex flex-col items-center justify-center h-full text-center p-8">
+    <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
+    <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
+    <p className="text-gray-600 mb-4 max-w-md">{error.message}</p>
+    <Button onClick={onRetry}>Try Again</Button>
+  </div>
+);
+
+// --- Type Definitions ---
 interface InventoryItem {
   id: string;
   name: string;
@@ -117,7 +133,29 @@ interface PaginatedItemsResponse {
 
 type ItemFormValues = Omit<InventoryItem, "id" | "created_at" | "hotel">;
 
-// Reusable Sub-component for Sortable Table Headers
+// --- Helper Maps & Configs for Reorder Priority ---
+const valueToPriorityMap: { [key: number]: string } = {
+  1: "Low",
+  5: "Medium",
+  10: "High",
+};
+
+const priorityConfig = {
+  Low: {
+    className:
+      "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-400 dark:border-emerald-700/60",
+  },
+  Medium: {
+    className:
+      "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/50 dark:text-amber-400 dark:border-amber-700/60",
+  },
+  High: {
+    className:
+      "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/50 dark:text-rose-400 dark:border-rose-700/60",
+  },
+};
+
+// --- Reusable Sub-component for Sortable Table Headers ---
 const SortableHeader = ({
   column,
   children,
@@ -145,12 +183,12 @@ const SortableHeader = ({
   </div>
 );
 
-// Main Component
+// --- Main Component ---
 export default function InventoryItems() {
   const queryClient = useQueryClient();
   const { hotel } = useHotel();
 
-  // State Management
+  // --- State Management ---
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -161,7 +199,7 @@ export default function InventoryItems() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
-  // Data Fetching for Items
+  // --- Data Fetching for Items ---
   const {
     data: itemsResponse,
     isLoading,
@@ -191,7 +229,7 @@ export default function InventoryItems() {
     enabled: !!hotel?.id,
   });
 
-  // Data Fetching for Categories (to populate dropdown)
+  // --- Data Fetching for Categories (to populate dropdown) ---
   const { data: categories, isLoading: isLoadingCategories } = useQuery<{
     results: InventoryCategory[];
   }>({
@@ -215,7 +253,7 @@ export default function InventoryItems() {
     return map;
   }, [categories]);
 
-  // Data Mutations
+  // --- Data Mutations ---
   const createItemMutation = useMutation({
     mutationFn: (newItem: ItemFormValues) => {
       const payload = { ...newItem, hotel: hotel!.id };
@@ -299,7 +337,7 @@ export default function InventoryItems() {
       {
         accessorKey: "name",
         header: ({ column }) => (
-          <SortableHeader column={column}>Name</SortableHeader>
+          <SortableHeader column={column}>Item Name</SortableHeader>
         ),
         cell: ({ row }) => (
           <div className="font-medium text-gray-800 dark:text-gray-200">
@@ -310,22 +348,42 @@ export default function InventoryItems() {
       },
       {
         accessorKey: "category",
-        header: "Category",
+        header: "Inv Category",
         cell: ({ row }) => categoryMap.get(row.original.category) || "N/A",
       },
       {
         accessorKey: "quantity_instock",
-        header: "In Stock",
+        header: "Available Items",
         cell: ({ row }) =>
           `${row.original.quantity_instock} ${row.original.unit}`,
       },
       {
         accessorKey: "cost_per_unit",
         header: ({ column }) => (
-          <SortableHeader column={column}>Cost/Unit (TZS)</SortableHeader>
+          <SortableHeader column={column}>Costs Per Unit</SortableHeader>
         ),
         cell: ({ row }) =>
-          parseFloat(row.original.cost_per_unit).toLocaleString(),
+          `TZS ${parseFloat(row.original.cost_per_unit).toLocaleString()}`,
+      },
+      {
+        accessorKey: "quantity_in_reorder",
+        header: "Units to Reorder",
+        cell: ({ row }) => row.original.quantity_in_reorder,
+      },
+      {
+        accessorKey: "reorder_level",
+        header: "Priority",
+        cell: ({ row }) => {
+          const priorityLabel =
+            valueToPriorityMap[row.original.reorder_level] || "N/A";
+          const config =
+            priorityConfig[priorityLabel as keyof typeof priorityConfig];
+          return (
+            <Badge className={cn("font-medium", config?.className)}>
+              {priorityLabel}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "is_active",
@@ -372,7 +430,8 @@ export default function InventoryItems() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  if (isError) return <ErrorPage error={error as Error} onRetry={refetch} />;
+  if (isError)
+    return <ErrorPageComponent error={error as Error} onRetry={refetch} />;
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -395,7 +454,7 @@ export default function InventoryItems() {
                     placeholder="Search by item name..."
                     value={globalFilter}
                     onChange={(e) => setGlobalFilter(e.target.value)}
-                    className="pl-10 w-full sm:w-60 bg-white dark:bg-[#101828] border-gray-200 dark:border-[#1D2939] rounded-md shadow-sm"
+                    className="pl-10 w-full sm:w-60 bg-white dark:bg-[#101828] border-gray-200 dark:border-[#1D2939] rounded-md shadow-none"
                   />
                 </div>
               </div>
@@ -404,7 +463,7 @@ export default function InventoryItems() {
                   variant="outline"
                   onClick={() => refetch()}
                   disabled={isRefetching || isLoading}
-                  className="gap-2 bg-white dark:bg-[#101828] dark:text-[#D0D5DD] border-gray-200 dark:border-[#1D2939] rounded-md shadow-sm"
+                  className="gap-2 bg-white dark:bg-[#101828] dark:text-[#D0D5DD] border-gray-200 dark:border-[#1D2939] rounded-md shadow-none"
                 >
                   <IoRefreshOutline
                     className={cn("h-5 w-5", isRefetching && "animate-spin")}
@@ -421,7 +480,7 @@ export default function InventoryItems() {
                 </SheetTrigger>
               </div>
             </div>
-            <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow-sm bg-white dark:bg-[#171F2F] overflow-hidden">
+            <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow-none bg-white dark:bg-[#171F2F] overflow-hidden">
               <Table>
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -460,6 +519,7 @@ export default function InventoryItems() {
                         key={row.id}
                         data-state={row.getIsSelected() && "selected"}
                         className="dark:border-b-[#1D2939] hover:bg-gray-50/50 dark:hover:bg-[#1C2433]"
+                        title={row.original.description || ""}
                       >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell
@@ -564,7 +624,7 @@ export default function InventoryItems() {
   );
 }
 
-// Sub-component for Row Actions
+// --- Sub-component for Row Actions ---
 function RowActions({
   row,
   onEdit,
@@ -627,7 +687,7 @@ function RowActions({
   );
 }
 
-// Sub-component for the Create/Edit Form Sheet
+// --- Sub-component for the Create/Edit Form Sheet ---
 interface ItemFormSheetProps {
   item: InventoryItem | null;
   categories: InventoryCategory[];
@@ -647,13 +707,19 @@ function ItemFormSheet({
 }: ItemFormSheetProps) {
   const [formState, setFormState] = useState<Partial<ItemFormValues>>({});
 
+  const priorityLabelToValueMap: { [key: string]: number } = {
+    Low: 1,
+    Medium: 5,
+    High: 10,
+  };
+
   useEffect(() => {
     if (item) {
       setFormState(item);
     } else {
       setFormState({
         is_active: true,
-        reorder_level: 0,
+        reorder_level: 1, // Default to Low
         quantity_instock: 0,
         quantity_in_reorder: 0,
       });
@@ -684,7 +750,7 @@ function ItemFormSheet({
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
         <div className="grid grid-cols-2 gap-4 p-6 overflow-y-auto">
           <div className="col-span-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Inventory Name</Label>
             <Input
               id="name"
               value={formState.name || ""}
@@ -694,7 +760,7 @@ function ItemFormSheet({
             />
           </div>
           <div className="col-span-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">Inventory Category</Label>
             <Select
               onValueChange={(value) => handleChange("category", value)}
               value={formState.category}
@@ -717,20 +783,21 @@ function ItemFormSheet({
             </Select>
           </div>
           <div>
-            <Label htmlFor="quantity">Quantity</Label>
+            <Label htmlFor="quantity">Available Quantity</Label>
             <Input
               id="quantity"
               type="number"
-              value={formState.quantity_instock || ""}
+              min="0"
+              value={formState.quantity_instock ?? ""}
               onChange={(e) =>
-                handleChange("quantity_instock", parseInt(e.target.value))
+                handleChange("quantity_instock", parseInt(e.target.value) || 0)
               }
               required
               className="dark:bg-[#171F2F] dark:border-[#1D2939]"
             />
           </div>
           <div>
-            <Label htmlFor="unit">Unit</Label>
+            <Label htmlFor="unit">Unit of Measure</Label>
             <Input
               id="unit"
               value={formState.unit || ""}
@@ -741,10 +808,11 @@ function ItemFormSheet({
             />
           </div>
           <div>
-            <Label htmlFor="cost">Cost (TZS)</Label>
+            <Label htmlFor="cost">Cost per Unit (TZS)</Label>
             <Input
               id="cost"
               type="number"
+              min="0"
               value={formState.cost_per_unit || ""}
               onChange={(e) => handleChange("cost_per_unit", e.target.value)}
               required
@@ -752,18 +820,40 @@ function ItemFormSheet({
             />
           </div>
           <div>
-            <Label htmlFor="reorder">Reorder Level</Label>
+            <Label htmlFor="units_to_reorder">Units to Reorder</Label>
             <Input
-              id="reorder"
+              id="units_to_reorder"
               type="number"
               min="0"
-              value={formState.reorder_level || ""}
+              value={formState.quantity_in_reorder ?? ""}
               onChange={(e) =>
-                handleChange("reorder_level", parseInt(e.target.value))
+                handleChange(
+                  "quantity_in_reorder",
+                  parseInt(e.target.value) || 0
+                )
               }
               required
               className="dark:bg-[#171F2F] dark:border-[#1D2939]"
             />
+          </div>
+          <div className="col-span-2">
+            <Label htmlFor="reorder">Reorder Priority</Label>
+            <Select
+              value={valueToPriorityMap[formState.reorder_level as number]}
+              onValueChange={(label) =>
+                handleChange("reorder_level", priorityLabelToValueMap[label])
+              }
+              required
+            >
+              <SelectTrigger className="dark:bg-[#171F2F] dark:border-[#1D2939]">
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent className="dark:bg-[#101828] dark:border-[#1D2939]">
+                <SelectItem value="Low">Low</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="col-span-2">
             <Label htmlFor="description">Description</Label>

@@ -1,11 +1,11 @@
 // src/pages/rooms/edit-room-dialog.tsx
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { toast } from "sonner";
-import { useEffect } from "react";
-import { Loader2, Users, Building, ImageIcon, Trash2 } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Loader2, Users, Building, Trash2, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   SheetHeader,
@@ -33,22 +33,16 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import hotelClient from "../../api/hotel-client";
 import { cn } from "@/lib/utils";
 import { BsCurrencyDollar } from "react-icons/bs";
-import { LuImagePlus } from "react-icons/lu";
 
 // --- TYPE DEFINITIONS ---
-interface GalleryImage {
-  url: string;
-}
-
 interface EditRoomFormData {
   code: string;
   description: string;
-  images: GalleryImage[];
+  image?: FileList;
   max_occupancy: number;
   price_per_night: number;
   availability_status: string;
@@ -57,10 +51,18 @@ interface EditRoomFormData {
   room_amenities: string[];
 }
 
-interface RoomDetails extends Omit<EditRoomFormData, "images"> {
+interface RoomDetails {
   id: string;
-  image: string;
+  code: string;
+  description: string;
+  image: string; // URL of the current primary image
   images: { url: string }[];
+  max_occupancy: number;
+  price_per_night: number;
+  availability_status: "Available" | "Booked" | "Maintenance";
+  room_type_id: string;
+  floor_number?: number;
+  room_amenities: string[];
 }
 
 interface RoomType {
@@ -80,6 +82,24 @@ interface EditRoomFormProps {
 }
 
 // --- VALIDATION SCHEMA ---
+const FILE_SIZE_LIMIT = 3 * 1024 * 1024; // 3 MB
+const SUPPORTED_FORMATS = ["image/jpeg", "image/png", "image/jpg"];
+
+const fileValidator = yup
+  .mixed()
+  .optional()
+  .test(
+    "fileSize",
+    "Image must be less than 3 MB",
+    (value: any) => !value || !value[0] || value[0].size <= FILE_SIZE_LIMIT
+  )
+  .test(
+    "fileFormat",
+    "Unsupported format. Use JPG or PNG.",
+    (value: any) =>
+      !value || !value[0] || SUPPORTED_FORMATS.includes(value[0].type)
+  );
+
 const editRoomSchema = yup.object().shape({
   code: yup.string().required("Room code is required."),
   description: yup.string().required("Description is required."),
@@ -104,23 +124,130 @@ const editRoomSchema = yup.object().shape({
     .oneOf(["Available", "Booked", "Maintenance"])
     .required("Status is required."),
   room_type_id: yup.string().required("Room type is required."),
-  images: yup
-    .array()
-    .of(
-      yup.object().shape({
-        url: yup
-          .string()
-          .url("Each image must be a valid URL.")
-          .required("Image URL cannot be empty."),
-      })
-    )
-    .min(1, "At least one image is required.")
-    .required(),
+  image: fileValidator,
   room_amenities: yup
     .array()
     .of(yup.string().required())
     .min(1, "At least one amenity must be selected."),
 });
+
+// --- NEW IMAGE DROPZONE COMPONENT ---
+const ImageDropzone = ({
+  field,
+  currentImageUrl,
+}: {
+  field: any;
+  currentImageUrl: string;
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(currentImageUrl);
+
+  useEffect(() => {
+    const file = field.value?.[0];
+    if (file instanceof File) {
+      const url = URL.createObjectURL(file);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreview(currentImageUrl);
+    }
+  }, [field.value, currentImageUrl]);
+
+  const handleFileChange = (files: FileList | null) => {
+    if (files && files.length > 0) {
+      field.onChange(files);
+    }
+  };
+
+  const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileChange(e.dataTransfer.files);
+  };
+
+  const selectedFile = field.value?.[0];
+
+  return (
+    <div className="space-y-4">
+      <div
+        onClick={() => inputRef.current?.click()}
+        onDragEnter={onDragEnter}
+        onDragOver={(e) => e.preventDefault()}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        className={cn(
+          "flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
+          isDragging
+            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+            : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800"
+        )}
+      >
+        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+          <UploadCloud className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" />
+          <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+            <span className="font-semibold">Click to upload</span> or drag and
+            drop
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            PNG, JPG up to 3MB
+          </p>
+        </div>
+        <Input
+          ref={inputRef}
+          type="file"
+          accept="image/png, image/jpeg, image/jpg"
+          className="hidden"
+          onChange={(e) => handleFileChange(e.target.files)}
+        />
+      </div>
+
+      {(selectedFile || currentImageUrl) && (
+        <div className="flex items-center justify-between w-full h-auto border-2 border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20 rounded-lg p-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src={preview || ""}
+              alt="Preview"
+              className="h-12 w-12 object-cover rounded-md flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-800 dark:text-gray-300 truncate">
+                {selectedFile?.name || "Current Image"}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {selectedFile
+                  ? `${(selectedFile.size / 1024).toFixed(1)} KB`
+                  : "Previously uploaded"}
+              </p>
+            </div>
+          </div>
+          {selectedFile && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50"
+              onClick={() => {
+                field.onChange(null);
+                if (inputRef.current) inputRef.current.value = "";
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function EditRoomForm({
   room,
@@ -146,13 +273,13 @@ export default function EditRoomForm({
     defaultValues: {
       code: room.code,
       description: room.description,
-      images: room.images?.length > 0 ? room.images : [{ url: room.image }],
       max_occupancy: room.max_occupancy,
       price_per_night: Number(room.price_per_night),
       availability_status: room.availability_status,
       room_type_id: room.room_type_id,
       floor_number: room.floor_number || 0,
       room_amenities: room.room_amenities || [],
+      image: undefined, // Start with no file selected
     },
     mode: "onChange",
   });
@@ -160,22 +287,18 @@ export default function EditRoomForm({
   const {
     control,
     handleSubmit,
-    watch,
-    formState: { isDirty },
+    formState: { isDirty, dirtyFields },
   } = form;
 
   useEffect(() => {
     onDirtyChange(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "images",
-  });
-
   const updateRoomMutation = useMutation({
-    mutationFn: (updatedData: Partial<EditRoomFormData & { image: string }>) =>
-      hotelClient.patch(`/rooms/${room.id}/`, updatedData),
+    mutationFn: (payload: { id: string; formData: FormData }) =>
+      hotelClient.patch(`/rooms/${payload.id}/`, payload.formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
     onSuccess: () => {
       toast.success("✅ Room details updated successfully!", {
         description: "All changes have been saved and are now live.",
@@ -201,29 +324,31 @@ export default function EditRoomForm({
   });
 
   const onFormSubmit = (data: EditRoomFormData) => {
-    const { dirtyFields } = form.formState;
-    const payload: Partial<EditRoomFormData & { image: string }> = {};
+    const formData = new FormData();
+    let hasChanges = false;
 
     (Object.keys(dirtyFields) as Array<keyof EditRoomFormData>).forEach(
       (key) => {
-        // @ts-ignore
-        payload[key] = data[key];
+        hasChanges = true;
+        const value = data[key];
+        if (key === "image" && value instanceof FileList && value.length > 0) {
+          formData.append(key, value[0]);
+        } else if (Array.isArray(value)) {
+          // Handle array fields like room_amenities
+          value.forEach((item) => formData.append(key, item));
+        } else if (value !== null && value !== undefined) {
+          formData.append(key, String(value));
+        }
       }
     );
 
-    if (dirtyFields.images && data.images.length > 0) {
-      payload.image = data.images[0].url;
-    }
-
-    if (Object.keys(payload).length === 0) {
+    if (!hasChanges) {
       toast.info("No changes were made.");
       return;
     }
 
-    updateRoomMutation.mutate(payload);
+    updateRoomMutation.mutate({ id: room.id, formData });
   };
-
-  const currentImages = watch("images");
 
   const getStatusVariant = (
     status: string
@@ -282,113 +407,6 @@ export default function EditRoomForm({
         >
           <div className="flex-1 overflow-y-auto px-8 py-6">
             <div className="space-y-8 pb-6">
-              <Card className="border-none p-0 bg-transparent dark:bg-transparent noScroll">
-                <CardContent className="p-0">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="h-5 w-5 text-gray-600 dark:text-[#98A2B3]" />
-                      <FormLabel className="text-lg font-semibold text-[#1D2939] dark:text-[#D0D5DD]">
-                        Room Gallery
-                      </FormLabel>
-                    </div>
-
-                    {currentImages && currentImages.length > 0 ? (
-                      <div className="flex gap-4 overflow-x-auto noScroll pb-2">
-                        {currentImages.map((image, index) => (
-                          <div
-                            key={index}
-                            className="group relative flex-shrink-0 w-64 h-40 rounded-md border dark:border-[#1D2939] shadow-xs overflow-hidden"
-                          >
-                            {image.url ? (
-                              <img
-                                src={image.url}
-                                alt={`Room image ${index + 1}`}
-                                className="h-full w-full object-cover"
-                                onError={(e) =>
-                                  (e.currentTarget.src =
-                                    "https://placehold.co/256x160/e2e8f0/94a3b8?text=Invalid+Image")
-                                }
-                              />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-[#171F2F] text-gray-400 dark:text-[#5D636E]">
-                                <ImageIcon className="h-6 w-6" />
-                              </div>
-                            )}
-                            <Button
-                              type="button"
-                              size="icon"
-                              className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-gray-900 opacity-0 group-hover:opacity-100 transition-all shadow-xs z-10 hover:bg-[#FFF] hover:text-rose-600 dark:bg-[#101828]/80 dark:text-[#D0D5DD] dark:hover:bg-[#101828] dark:hover:text-rose-400 cursor-pointer"
-                              onClick={() => remove(index)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="h-40 flex items-center justify-center bg-gray-100 dark:bg-[#171F2F] text-gray-500 dark:text-[#98A2B3] rounded-lg">
-                        <div className="text-center">
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2 text-gray-400 dark:text-[#5D636E]" />
-                          <p className="text-lg">No images available</p>
-                          <p className="text-sm">Add image URLs below</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-[#1D2939] dark:text-[#D0D5DD]">
-                          Manage Image URLs
-                        </h4>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => append({ url: "" })}
-                          className="text-blue-600 cursor-pointer hover:text-blue-700 hover:bg-transparent shadow-none border-none rounded-lg transition-all"
-                        >
-                          <LuImagePlus className="mr-2 h-4 w-4" />
-                          Add Image
-                        </Button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {fields.map((field, index) => (
-                          <FormField
-                            key={field.id}
-                            control={control}
-                            name={`images.${index}.url`}
-                            render={({ field: inputField }) => (
-                              <FormItem>
-                                <div className="flex gap-3">
-                                  <div className="flex-1">
-                                    <FormControl>
-                                      <Input
-                                        placeholder={`Enter image URL ${
-                                          index + 1
-                                        }`}
-                                        className={cn(
-                                          "h-11 rounded-lg",
-                                          focusRingClass,
-                                          inputBaseClass
-                                        )}
-                                        {...inputField}
-                                      />
-                                    </FormControl>
-                                  </div>
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Separator className="dark:bg-[#1D2939]" />
-
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold text-[#1D2939] dark:text-[#D0D5DD]">
                   Room Type & Status
@@ -618,6 +636,27 @@ export default function EditRoomForm({
                   )}
                 />
               </div>
+
+              <Separator className="dark:bg-[#1D2939]" />
+
+              <FormField
+                control={control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xl font-semibold text-[#1D2939] dark:text-[#D0D5DD]">
+                      Update Primary Image
+                    </FormLabel>
+                    <FormControl>
+                      <ImageDropzone
+                        field={field}
+                        currentImageUrl={room.image}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <Separator className="dark:bg-[#1D2939]" />
 

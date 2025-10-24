@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const hotelClient = axios.create({
-  baseURL: "http://hotel.safaripro.net/api/v1", // Hardcoded URL
+  baseURL: "https://hotel.safaripro.net/api/v1", // Hardcoded Un-encrypted URL
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

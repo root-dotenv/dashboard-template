@@ -1,6 +1,6 @@
 // src/pages/rooms/new-room.tsx
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -33,8 +33,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import hotelClient from "../../api/hotel-client";
+import hotelClient from "@/api/hotel-client";
 import ErrorPage from "@/components/custom/error-page";
+import { useAuthStore } from "@/store/auth.store";
+import { FaRegImages } from "react-icons/fa";
 
 // --- Icon Imports ---
 import {
@@ -48,9 +50,10 @@ import {
   Check,
   UploadCloud,
   HelpCircle,
+  Trash2,
 } from "lucide-react";
 
-// --- TYPE DEFINITIONS, SCHEMAS, AND API FUNCTIONS (UNCHANGED) ---
+// --- TYPE DEFINITIONS & SCHEMAS ---
 interface RoomTypeOption {
   id: string;
   name: string;
@@ -59,11 +62,32 @@ interface AmenityOption {
   id: string;
   name: string;
 }
-const HOTEL_ID = "552e27a3-7ac2-4f89-bc80-1349f3198105";
+
+const FILE_SIZE_LIMIT = 3 * 1024 * 1024; // 3 MB
+const SUPPORTED_FORMATS = ["image/jpeg", "image/png", "image/jpg"];
+
+const fileValidator = yup
+  .mixed()
+  .test(
+    "is-file",
+    "A primary image is required.",
+    (value: any) => value && value[0]
+  )
+  .test(
+    "fileSize",
+    "Image must be less than 3 MB",
+    (value: any) => !value || (value && value[0]?.size <= FILE_SIZE_LIMIT)
+  )
+  .test(
+    "fileFormat",
+    "Unsupported format. Use JPG or PNG.",
+    (value: any) =>
+      !value || (value && SUPPORTED_FORMATS.includes(value[0]?.type))
+  );
 
 const singleRoomSchema = yup.object({
   hotel: yup.string().required(),
-  code: yup.string().required("Room code is required."),
+  code: yup.string().optional(),
   description: yup.string().required("Description is required."),
   room_type: yup.string().required("A room type is required."),
   max_occupancy: yup
@@ -81,10 +105,12 @@ const singleRoomSchema = yup.object({
     .oneOf(["Available", "Booked", "Maintenance"], "Invalid status")
     .required("Availability status is required."),
   room_amenities: yup.array().of(yup.string().required()).optional(),
-  image: yup
-    .string()
-    .url("Must be a valid image URL.")
-    .required("A primary image URL is required."),
+  image: fileValidator.required("A primary image is required."),
+  floor_number: yup
+    .number()
+    .integer("Floor must be a whole number")
+    .typeError("Floor must be a number")
+    .required("Floor number is required."),
 });
 
 const bulkCreateSchema = yup.object({
@@ -101,72 +127,86 @@ const bulkCreateSchema = yup.object({
     .typeError("Price must be a number")
     .required("Price is required.")
     .positive("Price must be a positive number."),
-  amenity_ids: yup.array().of(yup.string().required()).optional(),
-  image_urls: yup
-    .string()
-    .required("At least one image URL is required.")
-    .test("is-valid-urls", "Each line must contain a valid URL.", (value) => {
-      if (!value) return false;
-      const urls = value
-        .split("\n")
-        .map((url) => url.trim())
-        .filter((url) => url);
-      return urls.every((url) => yup.string().url().isValidSync(url));
-    }),
+  room_amenities: yup.array().of(yup.string().required()).optional(),
+  image: fileValidator.required("A primary image is required."),
+  floor_number: yup
+    .number()
+    .integer("Floor must be a whole number")
+    .typeError("Floor must be a number")
+    .required("Floor number is required."),
 });
 
 type SingleRoomFormData = yup.InferType<typeof singleRoomSchema>;
 type BulkCreateFormShape = yup.InferType<typeof bulkCreateSchema>;
 
-const createSingleRoom = async (data: SingleRoomFormData) => {
-  const response = await hotelClient.post("rooms/", data);
+// --- API FUNCTIONS ---
+const createRoomWithFile = async (data: any) => {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    if (key === "image" && value instanceof FileList && value.length > 0) {
+      formData.append(key, value[0]);
+    } else if (Array.isArray(value)) {
+      value.forEach((item) => formData.append(key, String(item)));
+    } else if (value !== null && value !== undefined && value !== "") {
+      formData.append(key, String(value));
+    }
+  });
+
+  const response = await hotelClient.post("rooms/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 };
 
-const bulkCreateRooms = async (
-  data: Omit<BulkCreateFormShape, "image_urls"> & { image_urls: string[] }
-) => {
-  const response = await hotelClient.post("/rooms/bulk-create/", data);
+const bulkCreateRoomsWithFile = async (data: any) => {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    if (key === "image" && value instanceof FileList && value.length > 0) {
+      formData.append(key, value[0]);
+    } else if (Array.isArray(value)) {
+      value.forEach((item) => formData.append(key, String(item)));
+    } else if (value !== null && value !== undefined && value !== "") {
+      formData.append(key, String(value));
+    }
+  });
+
+  const response = await hotelClient.post("/rooms/bulk-create/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 };
 
-// --- STYLING CONSTANTS ---
+// --- STYLING CONSTANTS & MAIN COMPONENT ---
 const focusRingClass =
   "focus:ring-2 focus:ring-blue-500/40 dark:focus:ring-blue-400/40 focus:border-blue-500 dark:focus:border-blue-400";
 const inputBaseClass =
   "bg-white dark:bg-gray-900/50 border-gray-300 dark:border-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500";
 
-// ##################################################################
-// ### 1. MAIN PAGE COMPONENT (PARENT) ###
-// ##################################################################
 export default function NewRoomPage() {
   const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
+  const { hotelId } = useAuthStore();
 
   const {
     data: roomTypes,
     isLoading: isLoadingRoomTypes,
-    isError: isRoomTypesError,
     error: roomTypesError,
-    refetch: refetchRoomTypes,
   } = useQuery<RoomTypeOption[]>({
     queryKey: ["allRoomTypes"],
     queryFn: async () => (await hotelClient.get("room-types/")).data.results,
-    staleTime: 1000 * 60 * 30, // Cache for 30 mins
+    staleTime: 1000 * 60 * 30,
   });
 
   const {
     data: allAmenities,
     isLoading: isLoadingAmenities,
-    isError: isAmenitiesError,
     error: amenitiesError,
-    refetch: refetchAmenities,
   } = useQuery<AmenityOption[]>({
     queryKey: ["allAmenities"],
     queryFn: async () => (await hotelClient.get("amenities/")).data.results,
-    staleTime: 1000 * 60 * 30, // Cache for 30 mins
+    staleTime: 1000 * 60 * 30,
   });
 
-  if (isLoadingRoomTypes || isLoadingAmenities) {
+  if (isLoadingRoomTypes || isLoadingAmenities || !hotelId) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -174,11 +214,11 @@ export default function NewRoomPage() {
     );
   }
 
-  if (isRoomTypesError || isAmenitiesError) {
+  if (roomTypesError || amenitiesError) {
     return (
       <ErrorPage
         error={(roomTypesError || amenitiesError) as Error}
-        onRetry={isRoomTypesError ? refetchRoomTypes : refetchAmenities}
+        onRetry={() => {}}
       />
     );
   }
@@ -191,7 +231,6 @@ export default function NewRoomPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#101828]">
       <header className="bg-white/80 dark:bg-[#101828d1] backdrop-blur-sm border-b rounded dark:border-gray-800 sticky top-0 z-30 px-4 md:px-6 py-4">
-        {/* --- RESPONSIVE UPDATE: Header stacks on mobile --- */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <Link
@@ -228,12 +267,14 @@ export default function NewRoomPage() {
       <main>
         {activeTab === "single" && (
           <SingleRoomFormWrapper
+            hotelId={hotelId}
             roomTypes={roomTypes ?? []}
             allAmenities={allAmenities ?? []}
           />
         )}
         {activeTab === "bulk" && (
           <BulkRoomFormWrapper
+            hotelId={hotelId}
             roomTypes={roomTypes ?? []}
             allAmenities={allAmenities ?? []}
           />
@@ -243,27 +284,30 @@ export default function NewRoomPage() {
   );
 }
 
-// ##################################################################
-// ### 2. FORM WRAPPERS & PREVIEWS ###
-// ##################################################################
+// --- FORM WRAPPERS & PREVIEWS ---
 interface WrapperProps {
+  hotelId: string;
   roomTypes: RoomTypeOption[];
   allAmenities: AmenityOption[];
 }
 
-function SingleRoomFormWrapper({ roomTypes, allAmenities }: WrapperProps) {
+function SingleRoomFormWrapper({
+  hotelId,
+  roomTypes,
+  allAmenities,
+}: WrapperProps) {
   const form = useForm<SingleRoomFormData>({
     resolver: yupResolver(singleRoomSchema),
     mode: "onChange",
     defaultValues: {
-      hotel: HOTEL_ID,
+      hotel: hotelId,
       availability_status: "Available",
       room_amenities: [],
+      room_type: "",
     },
   });
 
   return (
-    // --- RESPONSIVE UPDATE: Main content padding adjusted ---
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-4 md:p-6 items-start">
       <SingleRoomForm
         form={form}
@@ -279,19 +323,23 @@ function SingleRoomFormWrapper({ roomTypes, allAmenities }: WrapperProps) {
   );
 }
 
-function BulkRoomFormWrapper({ roomTypes, allAmenities }: WrapperProps) {
+function BulkRoomFormWrapper({
+  hotelId,
+  roomTypes,
+  allAmenities,
+}: WrapperProps) {
   const form = useForm<BulkCreateFormShape>({
     resolver: yupResolver(bulkCreateSchema),
     mode: "onChange",
     defaultValues: {
-      hotel_id: HOTEL_ID,
+      hotel_id: hotelId,
       count: 1,
-      amenity_ids: [],
+      room_amenities: [],
+      room_type_id: "",
     },
   });
 
   return (
-    // --- RESPONSIVE UPDATE: Main content padding adjusted ---
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-4 md:p-6 items-start">
       <BulkRoomForm
         form={form}
@@ -307,9 +355,21 @@ function BulkRoomFormWrapper({ roomTypes, allAmenities }: WrapperProps) {
   );
 }
 
-// --- Preview Components ---
 function DetailsPreview({ control, roomTypes, allAmenities }: any) {
   const watchedValues = useWatch({ control });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    const imageFile = watchedValues.image?.[0];
+    if (imageFile instanceof File) {
+      const url = URL.createObjectURL(imageFile);
+      setImagePreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setImagePreview(null);
+    }
+  }, [watchedValues.image]);
+
   const roomTypeName = useMemo(
     () => roomTypes?.find((rt: any) => rt.id === watchedValues.room_type)?.name,
     [watchedValues.room_type, roomTypes]
@@ -334,10 +394,9 @@ function DetailsPreview({ control, roomTypes, allAmenities }: any) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 px-4 md:px-6">
-          {watchedValues.image &&
-          yup.string().url().isValidSync(watchedValues.image) ? (
+          {imagePreview ? (
             <img
-              src={watchedValues.image}
+              src={imagePreview}
               alt="Room Preview"
               className="rounded-lg object-cover w-full h-40 bg-gray-100 dark:bg-gray-800"
             />
@@ -381,6 +440,19 @@ function DetailsPreview({ control, roomTypes, allAmenities }: any) {
 
 function BulkDetailsPreview({ control, roomTypes, allAmenities }: any) {
   const watchedValues = useWatch({ control });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    const imageFile = watchedValues.image?.[0];
+    if (imageFile instanceof File) {
+      const url = URL.createObjectURL(imageFile);
+      setImagePreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setImagePreview(null);
+    }
+  }, [watchedValues.image]);
+
   const roomTypeName = useMemo(
     () =>
       roomTypes?.find((rt: any) => rt.id === watchedValues.room_type_id)?.name,
@@ -389,17 +461,10 @@ function BulkDetailsPreview({ control, roomTypes, allAmenities }: any) {
   const selectedAmenities = useMemo(
     () =>
       allAmenities?.filter((a: any) =>
-        watchedValues.amenity_ids?.includes(a.id)
+        watchedValues.room_amenities?.includes(a.id)
       ),
-    [watchedValues.amenity_ids, allAmenities]
+    [watchedValues.room_amenities, allAmenities]
   );
-  const imageUrls = useMemo(() => {
-    if (!watchedValues.image_urls) return [];
-    return watchedValues.image_urls
-      .split("\n")
-      .map((url: string) => url.trim())
-      .filter((url: string) => yup.string().url().isValidSync(url));
-  }, [watchedValues.image_urls]);
 
   return (
     <div className="lg:col-span-1 lg:sticky top-24">
@@ -413,20 +478,17 @@ function BulkDetailsPreview({ control, roomTypes, allAmenities }: any) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 px-4 md:px-6">
-          {imageUrls.length > 0 && (
+          {imagePreview && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Image Previews ({imageUrls.length} provided)
+                Image Preview
               </p>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {imageUrls.slice(0, 6).map((url, index) => (
-                  <img
-                    key={index}
-                    src={url}
-                    alt={`Preview ${index + 1}`}
-                    className="rounded-md object-cover w-full h-16 bg-gray-100 dark:bg-gray-800"
-                  />
-                ))}
+              <div className="mt-2">
+                <img
+                  src={imagePreview}
+                  alt={`Preview`}
+                  className="rounded-md object-cover w-full h-32 bg-gray-100 dark:bg-gray-800"
+                />
               </div>
             </div>
           )}
@@ -462,22 +524,13 @@ function BulkDetailsPreview({ control, roomTypes, allAmenities }: any) {
   );
 }
 
-// ##################################################################
-// ### 3. FORM COMPONENTS ###
-// ##################################################################
+// --- FORM & HELPER COMPONENTS ---
 interface FormComponentProps {
   form: any;
   roomTypes: RoomTypeOption[];
   allAmenities: AmenityOption[];
 }
-
-const AmenitiesSelector = ({
-  allAmenities,
-  field,
-}: {
-  allAmenities: AmenityOption[];
-  field: any;
-}) => {
+const AmenitiesSelector = ({ allAmenities, field }: any) => {
   const handleToggle = (id: string) => {
     const currentValue = field.value ?? [];
     const isSelected = currentValue.includes(id);
@@ -525,27 +578,6 @@ const AmenitiesSelector = ({
     </div>
   );
 };
-
-const ImageDropzone = ({ forMultiple = false }: { forMultiple?: boolean }) => (
-  <div className="flex items-center justify-center w-full">
-    <div className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800">
-      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-        <UploadCloud className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" />
-        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-          <span className="font-semibold">Click to upload</span> or drag and
-          drop
-        </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {forMultiple ? "PNG, JPG (up to 10MB each)" : "PNG, JPG (MAX. 10MB)"}
-        </p>
-      </div>
-      <p className="pb-4 text-xs text-amber-600 dark:text-amber-500">
-        Note: File upload is not yet active. Please use the URL input below.
-      </p>
-    </div>
-  </div>
-);
-
 const FormLabelWithInfo = ({
   label,
   infoText,
@@ -568,12 +600,104 @@ const FormLabelWithInfo = ({
   </div>
 );
 
+// --- MODIFIED IMAGE DROPZONE COMPONENT ---
+const ImageDropzone = ({ field }: { field: any }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (files: FileList | null) => {
+    if (files && files.length > 0) {
+      field.onChange(files);
+    }
+  };
+
+  const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileChange(e.dataTransfer.files);
+  };
+
+  const selectedFile = field.value?.[0];
+
+  if (selectedFile instanceof File) {
+    return (
+      <div className="flex items-center justify-between w-full h-auto border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <FaRegImages className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-green-800 dark:text-green-300 truncate">
+              {selectedFile.name}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {(selectedFile.size / 1024).toFixed(1)} KB
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50"
+          onClick={() => {
+            field.onChange(null);
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+        >
+          <Trash2 className="h-5 w-5" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onDragEnter={onDragEnter}
+      onDragOver={(e) => e.preventDefault()}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onClick={() => inputRef.current?.click()}
+      className={cn(
+        "flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
+        isDragging
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+          : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800"
+      )}
+    >
+      <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+        <UploadCloud className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" />
+        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+          <span className="font-semibold">Click to upload</span> or drag and
+          drop
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          PNG, JPG up to 3MB
+        </p>
+      </div>
+      <Input
+        ref={inputRef}
+        type="file"
+        accept="image/png, image/jpeg, image/jpg"
+        className="hidden"
+        onChange={(e) => handleFileChange(e.target.files)}
+      />
+    </div>
+  );
+};
+
 function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const mutation = useMutation({
-    mutationFn: createSingleRoom,
+    mutationFn: createRoomWithFile,
     onSuccess: (data) => {
       toast.success("Room Created Successfully!", {
         description: `The room "${data.code}" has been added.`,
@@ -593,10 +717,15 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
     },
   });
 
+  const onSubmit = (data: SingleRoomFormData) => {
+    console.log("Submitting Payload for Single Room:", data);
+    mutation.mutate(data);
+  };
+
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((data: any) => mutation.mutate(data))}
+        onSubmit={form.handleSubmit(onSubmit)}
         className="lg:col-span-2 space-y-8"
       >
         <div>
@@ -604,7 +733,6 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
             Core Details
           </h2>
           <Card className="bg-[#FFF] dark:bg-gray-900 rounded-md dark:border-gray-800 shadow-none border border-[#DADCE0]">
-            {/* --- RESPONSIVE UPDATE: Card padding adjusted --- */}
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 md:p-6">
               <FormField
                 control={form.control}
@@ -612,8 +740,8 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabelWithInfo
-                      label="Room Code/Number"
-                      infoText="A unique identifier for this room (e.g., 'DLX-101', '204'). This cannot be changed later."
+                      label="Room Code/Number (Optional)"
+                      infoText="A unique identifier for this room (e.g., 'DLX-101'). If left blank, one will be generated automatically."
                     />
                     <FormControl>
                       <Input
@@ -681,26 +809,20 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
               />
               <FormField
                 control={form.control}
-                name="availability_status"
+                name="floor_number"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabelWithInfo
-                      label="Current Status"
-                      infoText="The initial availability status of the room upon creation."
+                      label="Floor Number"
+                      infoText="The floor this room is on."
                     />
                     <FormControl>
-                      <select
+                      <Input
+                        type="number"
+                        className={cn(inputBaseClass, focusRingClass)}
+                        placeholder="e.g. 3"
                         {...field}
-                        className={cn(
-                          "w-full h-10 rounded-md border px-3 py-2 text-sm",
-                          inputBaseClass,
-                          focusRingClass
-                        )}
-                      >
-                        <option value="Available">Available</option>
-                        <option value="Booked">Booked</option>
-                        <option value="Maintenance">Maintenance</option>
-                      </select>
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -736,7 +858,7 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
 
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Pricing & Images
+            Pricing & Image
           </h2>
           <Card className="bg-[#FFF] dark:bg-gray-900 rounded-md dark:border-gray-800 shadow-none border border-[#DADCE0]">
             <CardContent className="space-y-6 p-4 md:p-6">
@@ -761,22 +883,17 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                   </FormItem>
                 )}
               />
-              <ImageDropzone />
               <FormField
                 control={form.control}
                 name="image"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabelWithInfo
-                      label="Primary Image URL"
-                      infoText="Provide a direct link (URL) to the main image for this room."
+                      label="Primary Image"
+                      infoText="Upload a high-quality image for this room (JPG, PNG, max 3MB)."
                     />
                     <FormControl>
-                      <Input
-                        placeholder="https://example.com/image.png"
-                        {...field}
-                        className={cn(inputBaseClass, focusRingClass)}
-                      />
+                      <ImageDropzone field={field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -838,7 +955,7 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
   const navigate = useNavigate();
 
   const mutation = useMutation({
-    mutationFn: bulkCreateRooms,
+    mutationFn: bulkCreateRoomsWithFile,
     onSuccess: (data) => {
       toast.success("Rooms Created Successfully!", {
         description: `${data.count || "Multiple"} rooms have been added.`,
@@ -859,14 +976,8 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
   });
 
   const onSubmit = (data: BulkCreateFormShape) => {
-    const payload = {
-      ...data,
-      image_urls: data.image_urls
-        .split("\n")
-        .map((url) => url.trim())
-        .filter(Boolean),
-    };
-    mutation.mutate(payload);
+    console.log("Submitting Payload for Bulk Create:", data);
+    mutation.mutate(data);
   };
 
   return (
@@ -938,7 +1049,7 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                 control={form.control}
                 name="price_per_night"
                 render={({ field }) => (
-                  <FormItem className="md:col-span-2">
+                  <FormItem>
                     <FormLabelWithInfo
                       label="Price/Night (USD)"
                       infoText="This price will be applied to every room created in this batch."
@@ -948,6 +1059,27 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                         className={cn(inputBaseClass, focusRingClass)}
                         type="number"
                         placeholder="e.g. 150"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="floor_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabelWithInfo
+                      label="Floor Number"
+                      infoText="The floor these rooms are on."
+                    />
+                    <FormControl>
+                      <Input
+                        type="number"
+                        className={cn(inputBaseClass, focusRingClass)}
+                        placeholder="e.g. 3"
                         {...field}
                       />
                     </FormControl>
@@ -985,32 +1117,21 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
 
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Images & Amenities
+            Image & Amenities
           </h2>
           <Card className="bg-[#FFF] dark:bg-gray-900 rounded-md dark:border-gray-800 shadow-none border border-[#DADCE0]">
             <CardContent className="space-y-6 p-4 md:p-6">
-              <ImageDropzone forMultiple={true} />
               <FormField
                 control={form.control}
-                name="image_urls"
+                name="image"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabelWithInfo
-                      label="Image URLs"
-                      infoText="Enter one image URL per line. These images will be distributed among the newly created rooms."
+                      label="Shared Primary Image"
+                      infoText="Upload one image that will be applied to all rooms in this batch (JPG, PNG, max 3MB)."
                     />
                     <FormControl>
-                      <Textarea
-                        placeholder={
-                          "https://example.com/image1.png\nhttps://example.com/image2.png"
-                        }
-                        className={cn(
-                          "min-h-[120px] resize-none",
-                          inputBaseClass,
-                          focusRingClass
-                        )}
-                        {...field}
-                      />
+                      <ImageDropzone field={field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1018,7 +1139,7 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
               />
               <FormField
                 control={form.control}
-                name="amenity_ids"
+                name="room_amenities"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabelWithInfo
@@ -1057,9 +1178,7 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
   );
 }
 
-// ##################################################################
-// ### 4. HELPER COMPONENTS ###
-// ##################################################################
+// --- HELPER COMPONENTS ---
 const DetailRow = ({
   label,
   value,

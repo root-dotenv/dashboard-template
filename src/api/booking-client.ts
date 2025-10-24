@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const bookingClient = axios.create({
-  baseURL: import.meta.env.VITE_BOOKING_BASE_URL,
+  baseURL: "https://booking.safaripro.net/api/v1/",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

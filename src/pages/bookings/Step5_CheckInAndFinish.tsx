@@ -1,4 +1,4 @@
-// Updated Step5_CheckInAndFinish.tsx with debugging and fallback logic
+// src/pages/bookings/components/Step5_CheckInAndFinish.tsx
 "use client";
 import { useMemo, useRef } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -19,9 +19,10 @@ import {
   ArrowRight,
   AlertCircle,
   RefreshCw,
+  ArrowLeft, // Added for consistency
 } from "lucide-react";
 import { format } from "date-fns";
-import { type BookingDetails } from "./booking-types";
+import { type CurrencyConversionResponse } from "./booking-types";
 import companyLogo from "/images/SafariPro_Logo.png";
 
 export default function Step5_CheckInAndFinish() {
@@ -36,51 +37,45 @@ export default function Step5_CheckInAndFinish() {
   const queryClient = useQueryClient();
   const ticketRef = useRef<HTMLDivElement>(null);
 
-  // Enhanced debugging
-  console.log("=== STEP 5 DEBUG INFO ===");
-  console.log("bookingDetails from store:", bookingDetails);
-  console.log("createdBooking from store:", createdBooking);
-  console.log("bookingDetails ID:", bookingDetails?.id);
-  console.log("createdBooking ID:", createdBooking?.id);
-  console.log("========================");
-
-  // Fallback: If bookingDetails is missing but createdBooking exists, fetch the details
-  const shouldFetchBookingDetails = !bookingDetails && !!createdBooking?.id;
-
   const {
-    data: fetchedBookingDetails,
+    data: fetchedConversionData,
     isLoading: isFetchingDetails,
     isError: fetchError,
     error: fetchErrorMessage,
-  } = useQuery<BookingDetails>({
-    queryKey: ["bookingDetails", createdBooking?.id],
+    refetch: refetchConversion,
+  } = useQuery<CurrencyConversionResponse>({
+    queryKey: ["bookingCurrencyConversion", createdBooking?.id],
     queryFn: async () => {
-      console.log("Fetching booking details for ID:", createdBooking!.id);
       const response = await bookingClient.get(
-        `/bookings/${createdBooking!.id}`
+        `/bookings/${createdBooking!.id}/currency-conversions`
       );
-      console.log("Fetched booking details:", response.data);
       return response.data;
     },
-    enabled: shouldFetchBookingDetails,
-    onSuccess: (data) => {
-      console.log("Setting booking details in store:", data);
-      setBookingDetails(data);
+    // Fetch only if needed (e.g., direct navigation or refresh)
+    enabled: !!createdBooking?.id && !bookingDetails?.payment_status, // Enable if bookingDetails might be stale
+    staleTime: 1000 * 60, // Consider data stale after 1 minute
+    refetchOnWindowFocus: false,
+    retry: 1,
+    onSuccess: (response) => {
+      setBookingDetails(response.data.booking);
     },
-    retry: 2,
   });
 
-  // Use either existing bookingDetails or freshly fetched ones
-  const currentBookingDetails = bookingDetails || fetchedBookingDetails;
+  // Prioritize potentially fresher data from the store if payment was just confirmed
+  const currentBookingDetails =
+    bookingDetails || fetchedConversionData?.data.booking;
 
+  // Use conversion details from the fetched data
   const currencyConversionDetails = useMemo(() => {
-    if (!currentBookingDetails) return null;
-    const conversionAction = currentBookingDetails.status_history.find(
-      (action) => action.action === "currency_conversion"
+    // Make sure to use fetchedConversionData, not bookingDetails for conversions
+    const conversions = fetchedConversionData?.data.conversions;
+    if (!conversions) return null;
+    return (
+      conversions.find(
+        (c) => c.conversion_type === "amount_required_reference"
+      ) || null
     );
-    console.log("Currency conversion details:", conversionAction?.details);
-    return conversionAction?.details || null;
-  }, [currentBookingDetails]);
+  }, [fetchedConversionData]);
 
   const checkInMutation = useMutation({
     mutationFn: (bookingId: string) =>
@@ -106,21 +101,22 @@ export default function Step5_CheckInAndFinish() {
   });
 
   const handleFinish = () => {
-    toast.success("Booking created successfully!", {
+    toast.success("Booking completed successfully!", {
+      // Changed message slightly
       description:
-        "You can check the guest in later from the main bookings page.",
+        "You can view the booking details or check the guest in later from the main bookings page.",
     });
     resetBookingStore();
     navigate("/bookings/all-bookings");
   };
 
-  // Show loading state while fetching missing booking details
-  if (isFetchingDetails) {
+  if (isFetchingDetails && !currentBookingDetails) {
+    // Show loader only if no details available at all
     return (
       <div className="flex flex-col items-center justify-center text-center py-20">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-          Loading Booking Details...
+          Loading Booking Ticket...
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           Preparing your booking ticket and final details.
@@ -129,25 +125,29 @@ export default function Step5_CheckInAndFinish() {
     );
   }
 
-  // Show error if fetching failed
-  if (fetchError) {
+  // Handle case where fetch failed AND we don't have details from the store
+  if (fetchError && !currentBookingDetails) {
     return (
       <div className="text-red-600 bg-red-50 dark:bg-red-900/20 p-6 rounded-lg flex flex-col items-center text-center">
         <AlertCircle className="h-10 w-10 mb-4" />
         <h3 className="text-lg font-semibold">
-          Failed to Load Booking Details
+          Failed to Load Final Booking Details
         </h3>
         <p className="mb-4">{fetchErrorMessage?.message}</p>
         <div className="flex items-center gap-4 mt-4">
           <Button onClick={() => setStep(4)} variant="outline">
-            Go Back to Step 4
+            <ArrowLeft className="mr-2 h-4 w-4" /> Go Back to Payment Step
           </Button>
           <Button
-            onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["bookingDetails"] })
-            }
+            onClick={() => refetchConversion()} // Retry fetching conversion data
+            disabled={isFetchingDetails}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw
+              className={cn(
+                "mr-2 h-4 w-4",
+                isFetchingDetails && "animate-spin"
+              )}
+            />
             Retry
           </Button>
         </div>
@@ -155,86 +155,91 @@ export default function Step5_CheckInAndFinish() {
     );
   }
 
-  // Show error if no booking details and no createdBooking to fetch from
+  // Handle case where booking ID itself is missing (shouldn't happen in normal flow)
   if (!currentBookingDetails && !createdBooking) {
     return (
       <div className="text-center py-16 text-gray-500">
         <Info className="mx-auto h-12 w-12 text-red-400 mb-4" />
         <p className="font-semibold">Missing Booking Information</p>
-        <p>
-          No booking details found. Please start the booking process from Step
-          1.
-        </p>
-        <div className="flex justify-center gap-4 mt-4">
-          <Button onClick={() => setStep(1)} variant="outline">
-            Go Back to Step 1
-          </Button>
-          <Button onClick={() => setStep(4)}>Try Step 4 Again</Button>
-        </div>
-      </div>
-    );
-  }
-
-  // If we still don't have booking details, show error
-  if (!currentBookingDetails) {
-    return (
-      <div className="text-center py-16 text-gray-500">
-        <Info className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <p className="font-semibold">Booking Data Not Found</p>
-        <p>Could not load the completed booking. Please go back.</p>
-        <Button onClick={() => setStep(4)} className="mt-4">
-          Go Back to Step 4
+        <p>Cannot display ticket. Please start the booking process again.</p>
+        <Button
+          onClick={() => {
+            resetBookingStore();
+            setStep(1);
+          }}
+          variant="outline"
+          className="mt-4"
+        >
+          Start New Booking
         </Button>
       </div>
     );
   }
 
-  // Check if currency conversion is available (needed for the ticket)
-  if (!currencyConversionDetails) {
+  // Handle case where booking details exist but conversion details are missing (could happen on refresh if API fails)
+  if (
+    currentBookingDetails &&
+    !currencyConversionDetails &&
+    !isFetchingDetails
+  ) {
     return (
       <div className="text-center py-16 text-amber-600">
         <Info className="mx-auto h-12 w-12 mb-4" />
-        <p className="font-semibold">Currency Conversion Pending</p>
-        <p>The final TZS amount calculation is still in progress.</p>
+        <p className="font-semibold">Could Not Load Full Pricing Details</p>
+        <p>
+          The final TZS amount could not be loaded for the ticket. Basic booking
+          details are shown below.
+        </p>
+        {/* Render basic ticket without pricing or allow retry */}
         <div className="flex justify-center gap-4 mt-4">
           <Button onClick={() => setStep(4)} variant="outline">
-            Go Back to Step 4
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payment Step
           </Button>
           <Button
-            onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["bookingDetails"] })
-            }
+            onClick={() => refetchConversion()}
+            disabled={isFetchingDetails}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh Data
+            <RefreshCw
+              className={cn(
+                "mr-2 h-4 w-4",
+                isFetchingDetails && "animate-spin"
+              )}
+            />
+            Retry Fetching Pricing
           </Button>
         </div>
+        {/* Optionally render partial ticket here */}
       </div>
     );
   }
 
-  const amountRequiredUSD = parseFloat(
-    currentBookingDetails.amount_required
-  ).toFixed(2);
-  const amountPaidTZS = currencyConversionDetails.converted_required;
+  // Ensure we definitely have booking details to proceed
+  if (!currentBookingDetails) {
+    return (
+      // Generic fallback if somehow still missing
+      <div className="flex flex-col items-center justify-center text-center py-20">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // --- Data Extraction for Ticket ---
+  // Use fetched conversion data primarily for amounts
+  const amountRequiredUSD =
+    currencyConversionDetails?.original_amount ??
+    // Fallback to booking data if conversion missing (less accurate)
+    parseFloat(currentBookingDetails.amount_required);
+  // Amount paid should reflect the confirmed TZS amount from conversion
+  const amountPaidTZS = currencyConversionDetails?.converted_amount ?? 0; // Default to 0 if missing
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Debug info panel - remove in production */}
-      <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-        <h4 className="font-semibold text-green-800">Debug Info:</h4>
-        <p className="text-sm text-green-700">
-          Booking ID: {currentBookingDetails.id} | Status:{" "}
-          {currentBookingDetails.booking_status} | Currency Conversion:{" "}
-          {currencyConversionDetails ? "✓" : "✗"} | Amount TZS: {amountPaidTZS}
-        </p>
-      </div>
-
+      {/* Ticket Div */}
       <div
         className="bg-white dark:bg-[#171F2F] p-6 rounded-lg shadow-lg border dark:border-gray-700"
         ref={ticketRef}
       >
-        {/* Printable Ticket Content */}
         <div className="flex justify-between items-start">
           <div>
             <img src={companyLogo} alt="SafariPro Logo" className="h-12" />
@@ -245,10 +250,22 @@ export default function Step5_CheckInAndFinish() {
             </p>
           </div>
           <div className="text-right">
-            <div className="flex items-center justify-end gap-2 text-green-600 dark:text-green-400">
-              <CheckCircle className="h-8 w-8" />
-              <span className="text-3xl font-bold uppercase">Paid</span>
-            </div>
+            {/* Show Paid status based on bookingDetails */}
+            {(currentBookingDetails.payment_status === "Paid" ||
+              currentBookingDetails.booking_status === "Confirmed") && (
+              <div className="flex items-center justify-end gap-2 text-green-600 dark:text-green-400">
+                <CheckCircle className="h-8 w-8" />
+                <span className="text-3xl font-bold uppercase">Paid</span>
+              </div>
+            )}
+            {/* Optional: Show Pending if needed */}
+            {currentBookingDetails.payment_status === "Pending" &&
+              currentBookingDetails.booking_status !== "Confirmed" && (
+                <div className="flex items-center justify-end gap-2 text-amber-600 dark:text-amber-400">
+                  <Hourglass className="h-8 w-8" />
+                  <span className="text-3xl font-bold uppercase">Pending</span>
+                </div>
+              )}
             <p className="text-sm text-muted-foreground">
               Issued on: {format(new Date(), "MMM dd, yyyy")}
             </p>
@@ -257,11 +274,12 @@ export default function Step5_CheckInAndFinish() {
 
         <Separator className="my-6" />
 
-        <div className="grid grid-cols-2 gap-6">
+        {/* Guest and Booking Period */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <h3 className="font-semibold mb-2">Guest Information</h3>
             <p>{currentBookingDetails.full_name}</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground truncate">
               {currentBookingDetails.email}
             </p>
             <p className="text-sm text-muted-foreground">
@@ -285,32 +303,48 @@ export default function Step5_CheckInAndFinish() {
               <strong>Duration:</strong> {currentBookingDetails.duration_days}{" "}
               Night(s)
             </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Room: {currentBookingDetails.property_item_type}
+            </p>
           </div>
         </div>
 
         <Separator className="my-6" />
 
+        {/* Payment Summary */}
         <div>
           <h3 className="font-semibold mb-4">Payment Summary</h3>
           <div className="space-y-2 border dark:border-gray-700 rounded-lg p-4">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                Base Price + Taxes & Fees (USD)
-              </span>
-              <span>${amountRequiredUSD}</span>
+              <span className="text-muted-foreground">Total Amount (USD)</span>
+              <span>${(amountRequiredUSD ?? 0).toFixed(2)}</span>
             </div>
+            {/* Conditionally show Exchange Rate */}
+            {currencyConversionDetails && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Exchange Rate (approx.)</span>
+                <span>
+                  1 USD ≈ {currencyConversionDetails.exchange_rate.toFixed(2)}{" "}
+                  TZS
+                </span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-lg">
               <span className="text-muted-foreground">Amount Paid (TZS)</span>
               <span>
                 {new Intl.NumberFormat("en-US").format(amountPaidTZS)} TZS
               </span>
             </div>
+            <p className="text-xs text-muted-foreground pt-1">
+              Payment Method: {currentBookingDetails.payment_method}
+            </p>
           </div>
         </div>
 
+        {/* QR Code */}
         <div className="mt-8 flex items-center justify-center flex-col gap-4 text-center">
           <QRCodeCanvas
-            value={`https://safaripro.net/booking-details/${currentBookingDetails.id}`}
+            value={`https://safaripro.net/booking-details/${currentBookingDetails.id}`} // Ensure ID is correct
             id="qr-code-canvas"
             size={128}
             bgColor={"#ffffff"}
@@ -319,12 +353,12 @@ export default function Step5_CheckInAndFinish() {
             includeMargin={true}
           />
           <p className="text-xs text-muted-foreground">
-            Scan this code to view your booking details online.
+            Scan QR code to view booking details online.
           </p>
         </div>
       </div>
 
-      {/* Action Buttons (Not part of the printed ticket) */}
+      {/* Action Buttons */}
       <div className="mt-8 flex flex-col sm:flex-row justify-end gap-4">
         <Button variant="outline" onClick={handlePrint}>
           <Printer className="mr-2 h-4 w-4" /> Print Ticket
@@ -334,12 +368,19 @@ export default function Step5_CheckInAndFinish() {
         </Button>
         <Button
           onClick={() => checkInMutation.mutate(currentBookingDetails.id)}
-          disabled={checkInMutation.isPending}
+          disabled={
+            checkInMutation.isPending ||
+            currentBookingDetails.booking_status === "Checked In"
+          } // Disable if already checked in
         >
-          {checkInMutation.isPending && (
+          {checkInMutation.isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <LogIn className="mr-2 h-4 w-4" />
           )}
-          <LogIn className="mr-2 h-4 w-4" /> Check-In Guest Now
+          {currentBookingDetails.booking_status === "Checked In"
+            ? "Already Checked-In"
+            : "Check-In Guest Now"}
         </Button>
       </div>
     </div>

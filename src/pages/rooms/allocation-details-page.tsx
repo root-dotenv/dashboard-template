@@ -41,7 +41,6 @@ import {
 import { EditAllocationForm } from "./components/edit-allocation-dialog";
 import {
   ArrowLeft,
-  Edit,
   Trash2,
   Loader2,
   CalendarDays,

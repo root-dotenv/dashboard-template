@@ -342,7 +342,7 @@ export default function EventSpaceTypes() {
                   placeholder="Search by type name..."
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
-                  className="pl-10 w-full sm:w-60 bg-white dark:bg-[#101828] border-gray-200 dark:border-[#1D2939] rounded-md shadow-sm"
+                  className="pl-10 w-full sm:w-60 bg-white dark:bg-[#101828] border-gray-200 dark:border-[#1D2939] rounded-md shadow-none"
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -350,11 +350,11 @@ export default function EventSpaceTypes() {
                   variant="outline"
                   onClick={() => refetch()}
                   disabled={isRefetching || isLoading}
-                  className="gap-2 bg-white dark:bg-[#101828] dark:text-[#D0D5DD] border-gray-200 dark:border-[#1D2939] rounded-md shadow-sm"
+                  className="gap-2 bg-white dark:bg-[#101828] dark:text-[#D0D5DD] border-gray-200 dark:border-[#1D2939] rounded-md shadow-none"
                 >
                   <IoRefreshOutline
                     className={cn("h-5 w-5", isRefetching && "animate-spin")}
-                  />{" "}
+                  />
                   Refresh
                 </Button>
                 <SheetTrigger asChild>
@@ -367,7 +367,7 @@ export default function EventSpaceTypes() {
                 </SheetTrigger>
               </div>
             </div>
-            <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow-sm bg-white dark:bg-[#171F2F] overflow-hidden">
+            <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow-none bg-white dark:bg-[#171F2F] overflow-hidden">
               <Table>
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (

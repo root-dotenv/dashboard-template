@@ -1,3 +1,4 @@
+// src/pages/rooms/room-types/types.ts
 export interface HotelImage {
   id: string;
   tag: string;

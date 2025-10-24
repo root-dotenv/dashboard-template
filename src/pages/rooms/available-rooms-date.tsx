@@ -87,7 +87,6 @@ function RoomDetailsView({ roomId }: { roomId: string }) {
           <ImageIcon className="text-blue-600" />
           Room Gallery
         </h3>
-
         <div
           className="flex gap-4 overflow-x-auto pb-4 noScroll"
           style={{ scrollBehavior: "smooth" }}
@@ -96,7 +95,7 @@ function RoomDetailsView({ roomId }: { roomId: string }) {
             room.images.map((img, index) => (
               <div
                 key={img.id}
-                className="flex-shrink-0 w-64 h-40 rounded-lg overflow-hidden border dark:border-[#1D2939] shadow-xs"
+                className="flex-shrink-0 w-64 h-40 rounded-lg overflow-hidden border dark:border-[#1D2939] shadow"
               >
                 <img
                   src={img.url}
@@ -313,7 +312,7 @@ export default function AvailableRoomsByDate() {
         </div>
       </div>
 
-      <main className="max-w-8xl bg-[#F9FAFB] dark:bg-transparent min-h-screen mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-8xl bg-[#FFF] dark:bg-transparent min-h-screen mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row items-end justify-between gap-4 pb-4">
           <div className="flex gap-x-4 items-end">
             <div className="flex items-center gap-2 w-full">
@@ -419,7 +418,7 @@ export default function AvailableRoomsByDate() {
           </div>
         )}
         {data && !isFetching && (
-          <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow-sm bg-white dark:bg-[#171F2F] overflow-hidden">
+          <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow bg-white dark:bg-[#171F2F] overflow-hidden">
             <div className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge
@@ -474,7 +473,7 @@ export default function AvailableRoomsByDate() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-y-2 border-gray-300 dark:border-y-[#1D2939]">
-                    <TableHead className="h-14 px-6 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#101828] dark:to-[#101828]/90 shadow-sm sticky left-0 z-20 min-w-[200px] border-r border-gray-300 dark:border-r-[#1D2939]">
+                    <TableHead className="h-14 px-6 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#101828] dark:to-[#101828]/90 shadow sticky left-0 z-20 min-w-[200px] border-r border-gray-300 dark:border-r-[#1D2939]">
                       Room
                     </TableHead>
                     {dateHeaders.map((date) => (

@@ -1,8 +1,8 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import hotelClient from "../api/hotel-client";
-import { useAuthStore } from "../store/auth.store"; // --- 1. Corrected import path
-import type { Hotel } from "../types/hotel-types"; // --- 2. Corrected import path
+import { useAuthStore } from "../store/auth.store";
+import type { Hotel } from "../types/hotel-types";
 import { Loader2 } from "lucide-react";
 
 // Define the shape of the context's value

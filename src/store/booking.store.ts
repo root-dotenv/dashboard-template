@@ -12,17 +12,16 @@ interface BookingState {
   startDate?: Date;
   endDate?: Date;
   selectedRoom?: AvailableRoom;
-  bookingPayload?: CreateBookingPayload;
-  createdBooking?: CreateBookingResponse;
-  bookingDetails?: BookingDetails;
+  bookingPayload?: CreateBookingPayload; // Note: Might be less useful now
+  createdBooking?: CreateBookingResponse; // Holds initial response (incl. ID, payment_reference)
+  bookingDetails?: BookingDetails; // Holds detailed/updated booking info
 }
 
 interface BookingActions {
   setStep: (step: number) => void;
   setDates: (dates: { start?: Date; end?: Date }) => void;
   setSelectedRoom: (room: AvailableRoom) => void;
-  // --- BUG FIX: Renamed this action for consistency ---
-  setBookingPayload: (payload: CreateBookingPayload) => void;
+  setBookingPayload: (payload: CreateBookingPayload) => void; // Keep for logging/debugging?
   setCreatedBooking: (booking: CreateBookingResponse) => void;
   setBookingDetails: (details: BookingDetails) => void;
   reset: () => void;
@@ -30,8 +29,9 @@ interface BookingActions {
 
 const initialState: BookingState = {
   step: 1,
+  // Sensible defaults
   startDate: new Date(),
-  endDate: new Date(new Date().setDate(new Date().getDate() + 4)),
+  endDate: new Date(new Date().setDate(new Date().getDate() + 1)), // Default to 1 night
   selectedRoom: undefined,
   bookingPayload: undefined,
   createdBooking: undefined,
@@ -48,7 +48,6 @@ export const useBookingStore = create<BookingState & BookingActions>()(
 
     setSelectedRoom: (room) => set({ selectedRoom: room }),
 
-    // --- BUG FIX: Implementing the correctly named action ---
     setBookingPayload: (payload) => set({ bookingPayload: payload }),
 
     setCreatedBooking: (booking) => set({ createdBooking: booking }),

@@ -1,4 +1,4 @@
-// --- src/pages/housekeeping/inventory-categories.tsx ---
+// - - - src/pages/housekeeping/inventory-categories.tsx
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -375,7 +375,7 @@ export default function InventoryCategories() {
                     placeholder="Search by name..."
                     value={globalFilter}
                     onChange={(e) => setGlobalFilter(e.target.value)}
-                    className="pl-10 w-full sm:w-60 bg-white dark:bg-[#101828] border-gray-200 dark:border-[#1D2939] rounded-md shadow-sm"
+                    className="pl-10 w-full sm:w-60 bg-white dark:bg-[#101828] border-gray-200 dark:border-[#1D2939] rounded-md shadow-none"
                   />
                 </div>
               </div>
@@ -384,7 +384,7 @@ export default function InventoryCategories() {
                   variant="outline"
                   onClick={() => refetch()}
                   disabled={isRefetching || isLoading}
-                  className="gap-2 bg-white dark:bg-[#101828] dark:text-[#D0D5DD] border-gray-200 dark:border-[#1D2939] rounded-md shadow-sm"
+                  className="gap-2 bg-white dark:bg-[#101828] dark:text-[#D0D5DD] border-gray-200 dark:border-[#1D2939] rounded-md shadow-none"
                 >
                   <IoRefreshOutline
                     className={cn("h-5 w-5", isRefetching && "animate-spin")}
@@ -401,7 +401,7 @@ export default function InventoryCategories() {
                 </SheetTrigger>
               </div>
             </div>
-            <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow-sm bg-white dark:bg-[#171F2F] overflow-hidden">
+            <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow-none bg-white dark:bg-[#171F2F] overflow-hidden">
               <Table>
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
