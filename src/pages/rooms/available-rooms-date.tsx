@@ -1,9 +1,16 @@
+// src/pages/rooms/available-rooms-date.tsx
 "use client";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react"; // Added ChangeEvent
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { format, eachDayOfInterval, parseISO, addDays } from "date-fns";
-import { type DateRange } from "react-day-picker";
+// Removed addDays, DateRange, react-day-picker imports
+import {
+  format,
+  eachDayOfInterval,
+  parseISO,
+  isValid,
+  addDays,
+} from "date-fns"; // Added addDays back
 import {
   Loader2,
   AlertCircle,
@@ -11,8 +18,6 @@ import {
   ListFilter,
   Ticket,
   Check,
-  X,
-  Minus,
   Users,
   ImageIcon,
   ChevronFirst,
@@ -20,19 +25,13 @@ import {
   ChevronRight,
   ChevronLast,
   Eye,
-  Calendar as CalendarIcon,
+  // Calendar as CalendarIcon, // No longer needed
   Layers,
 } from "lucide-react";
 import { useHotel } from "@/providers/hotel-provider";
 import hotelClient from "@/api/hotel-client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -51,6 +50,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AvailabilityRangeResponse, DetailedRoom } from "./types/rooms";
+import { toast } from "sonner"; // Import toast
 
 // --- Room Details Sub-Component with Redesigned Gallery ---
 function RoomDetailsView({ roomId }: { roomId: string }) {
@@ -72,30 +72,37 @@ function RoomDetailsView({ roomId }: { roomId: string }) {
     );
   }
 
-  if (isError) {
+  // Improved error display
+  if (isError || !room) {
     return (
-      <div className="text-red-600 flex items-center gap-2">
-        <AlertCircle /> Error loading room details: {error.message}
+      <div className="p-6 text-red-600 dark:text-red-400 flex items-center gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/60 rounded-md">
+        <AlertCircle className="h-5 w-5" />
+        <span>
+          Error loading room details: {error?.message || "Room data not found."}
+        </span>
       </div>
     );
   }
 
   return (
+    // Applied shadow-none to internal elements
     <div className="flex flex-col h-full space-y-6 p-6">
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg flex items-center gap-2 text-[#1D2939] dark:text-[#D0D5DD]">
-          <ImageIcon className="text-blue-600" />
-          Room Gallery
-        </h3>
-        <div
-          className="flex gap-4 overflow-x-auto pb-4 noScroll"
-          style={{ scrollBehavior: "smooth" }}
-        >
-          {room.images.length > 0 ? (
-            room.images.map((img, index) => (
+      {/* --- Conditionally render Gallery Section --- */}
+      {room.images && room.images.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg flex items-center gap-2 text-[#1D2939] dark:text-[#D0D5DD]">
+            <ImageIcon className="text-blue-600" />
+            Room Gallery
+          </h3>
+          <div
+            className="flex gap-4 overflow-x-auto pb-4 noScroll"
+            style={{ scrollBehavior: "smooth" }}
+          >
+            {room.images.map((img, index) => (
               <div
                 key={img.id}
-                className="flex-shrink-0 w-64 h-40 rounded-lg overflow-hidden border dark:border-[#1D2939] shadow"
+                // Applied shadow-none
+                className="flex-shrink-0 w-64 h-40 rounded-lg overflow-hidden border dark:border-[#1D2939] shadow-none"
               >
                 <img
                   src={img.url}
@@ -103,19 +110,11 @@ function RoomDetailsView({ roomId }: { roomId: string }) {
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                 />
               </div>
-            ))
-          ) : (
-            <div className="flex-shrink-0 w-64 h-40 flex items-center justify-center bg-gray-100 dark:bg-[#171F2F] rounded-lg border dark:border-[#1D2939]">
-              <div className="text-center">
-                <ImageIcon className="h-8 w-8 mx-auto mb-2 text-gray-400 dark:text-[#5D636E]" />
-                <p className="text-sm text-gray-500 dark:text-[#98A2B3]">
-                  No images available
-                </p>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+      {/* --- End Conditional Rendering --- */}
 
       <div className="space-y-6">
         <div>
@@ -124,18 +123,23 @@ function RoomDetailsView({ roomId }: { roomId: string }) {
           </h3>
           <div className="flex flex-wrap gap-2 mt-2">
             {room.amenities.map((amenity) => (
+              // Applied shadow-none
               <Badge
                 key={amenity.id}
-                className="bg-[#EFF6FF] dark:bg-[#162142] text-blue-600 dark:text-[#98A2B3] border border-blue-200 dark:border-[#162142]"
+                className="bg-[#EFF6FF] dark:bg-[#162142] text-blue-600 dark:text-[#98A2B3] border border-blue-200 dark:border-[#162142] shadow-none"
               >
                 {amenity.name}
               </Badge>
             ))}
+            {room.amenities.length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No specific amenities listed.
+              </p>
+            )}
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-2"></div>
           <div className="flex items-center gap-2">
             <Users className="text-gray-600 dark:text-[#98A2B3]" />
             <span className="font-medium text-[#1D2939] dark:text-[#D0D5DD]">
@@ -151,7 +155,7 @@ function RoomDetailsView({ roomId }: { roomId: string }) {
               Floor Number:
             </span>
             <span className="text-gray-600 dark:text-[#98A2B3]">
-              {room.floor_number}
+              {room.floor_number ?? "N/A"} {/* Handle potential null floor */}
             </span>
           </div>
         </div>
@@ -161,7 +165,7 @@ function RoomDetailsView({ roomId }: { roomId: string }) {
             Room Description
           </h4>
           <p className="text-sm text-gray-600 dark:text-[#98A2B3] leading-relaxed">
-            {room.description}
+            {room.description || "No description provided."}
           </p>
         </div>
       </div>
@@ -173,10 +177,12 @@ function RoomDetailsView({ roomId }: { roomId: string }) {
 export default function AvailableRoomsByDate() {
   const navigate = useNavigate();
   const { hotel } = useHotel();
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 4),
-  });
+  // --- State for native date inputs (strings) ---
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const fourDaysLaterStr = format(addDays(new Date(), 4), "yyyy-MM-dd");
+  const [startDate, setStartDate] = useState<string>(todayStr);
+  const [endDate, setEndDate] = useState<string>(fourDaysLaterStr);
+  // --- End date input state ---
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string | null>(
     null
@@ -185,28 +191,38 @@ export default function AvailableRoomsByDate() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
   const isInitialMount = useRef(true);
 
-  const startDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : "";
-  const endDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : "";
-
+  // Use startDate and endDate directly in queryKey and queryFn
   const { data, isError, error, refetch, isFetching } =
     useQuery<AvailabilityRangeResponse>({
       queryKey: [
         "roomAvailability",
         hotel?.id,
-        startDate,
-        endDate,
+        startDate, // Use state directly
+        endDate, // Use state directly
         selectedRoomTypeId,
       ],
       queryFn: async () => {
         if (!hotel?.id || !startDate || !endDate) {
           return Promise.reject(
-            new Error("A valid date range is required to search.")
+            new Error("A valid hotel and date range are required to search.")
           );
         }
+        // Basic date validation
+        const start = parseISO(startDate);
+        const end = parseISO(endDate);
+        if (!isValid(start) || !isValid(end)) {
+          return Promise.reject(new Error("Invalid date format provided."));
+        }
+        if (end <= start) {
+          return Promise.reject(
+            new Error("End date must be after start date.")
+          );
+        }
+
         const params = new URLSearchParams({
           hotel_id: hotel.id,
-          start_date: startDate,
-          end_date: endDate,
+          start_date: startDate, // Use state directly
+          end_date: endDate, // Use state directly
         });
         if (selectedRoomTypeId) {
           params.append("room_type_id", selectedRoomTypeId);
@@ -216,28 +232,64 @@ export default function AvailableRoomsByDate() {
         );
         return response.data;
       },
-      enabled: false,
+      enabled: false, // Keep disabled initially
       retry: false,
     });
 
+  // Fetch on initial load or if hotelId becomes available later
   useEffect(() => {
-    handleSearch();
+    if (hotel?.id && startDate && endDate) {
+      handleSearch();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hotel?.id]); // Only run when hotelId changes or on initial mount if already present
 
+  // Refetch when room type filter or dates change (after initial mount)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    if (startDate && endDate) {
+    if (startDate && endDate && hotel?.id) {
       refetch();
     }
-  }, [selectedRoomTypeId, refetch, startDate, endDate]);
+  }, [selectedRoomTypeId, startDate, endDate, refetch, hotel?.id]);
+
+  const handleDateChange = (
+    e: ChangeEvent<HTMLInputElement>,
+    type: "start" | "end"
+  ) => {
+    const value = e.target.value; // yyyy-MM-dd string
+    if (type === "start") {
+      setStartDate(value);
+      // Optional: Auto-adjust end date if it becomes invalid
+      const start = parseISO(value);
+      const end = parseISO(endDate);
+      if (isValid(start) && isValid(end) && end <= start) {
+        setEndDate(format(addDays(start, 1), "yyyy-MM-dd")); // Set end date to day after start
+      }
+    } else {
+      setEndDate(value);
+    }
+  };
 
   const handleSearch = () => {
-    if (startDate && endDate) {
+    // Validation before triggering refetch
+    const start = parseISO(startDate);
+    const end = parseISO(endDate);
+    if (!startDate || !endDate || !isValid(start) || !isValid(end)) {
+      toast.error("Please select valid start and end dates.");
+      return;
+    }
+    if (end <= start) {
+      toast.error("End date must be after start date.");
+      return;
+    }
+    if (hotel?.id) {
+      // Ensure hotelId exists
       refetch();
+    } else {
+      toast.error("Hotel information is not available yet.");
     }
   };
 
@@ -263,45 +315,65 @@ export default function AvailableRoomsByDate() {
   }, [filteredRooms, pagination]);
 
   const dateHeaders = useMemo(() => {
+    // Generate dates based on the response data, ensures alignment
     if (!data?.start_date || !data?.end_date) return [];
-    return eachDayOfInterval({
-      start: parseISO(data.start_date),
-      end: parseISO(data.end_date),
-    });
-  }, [data]);
+    try {
+      const start = parseISO(data.start_date);
+      const end = parseISO(data.end_date);
+      if (!isValid(start) || !isValid(end) || end < start) return []; // Add validation
+      return eachDayOfInterval({ start, end });
+    } catch (e) {
+      console.error("Error parsing date headers:", e);
+      return [];
+    }
+  }, [data?.start_date, data?.end_date]);
 
-  const renderStatusCell = (status: string) => {
+  // --- *** MODIFIED renderStatusCell Function *** ---
+  const renderStatusCell = (status: string | undefined) => {
+    // Accept undefined
     switch (status) {
       case "Available":
         return (
-          <div className="flex items-center justify-center gap-1 text-green-600">
+          // Keep Check icon for Available
+          <div className="flex items-center justify-center text-green-600">
             <Check size={16} />
           </div>
         );
       case "Booked":
         return (
-          <div className="flex items-center justify-center gap-1 text-amber-600">
-            <Minus size={16} />
-          </div>
+          // Use "BKD" text for Booked
+          <span className="font-semibold text-xs text-amber-700 dark:text-amber-400">
+            BKD
+          </span>
         );
       case "Maintenance":
         return (
-          <div className="flex items-center justify-center gap-1 text-rose-600">
-            <X size={16} />
-          </div>
+          // Use "MNC" text for Maintenance
+          <span className="font-semibold text-xs text-rose-700 dark:text-rose-400">
+            MNC
+          </span>
         );
       default:
-        return <span className="text-gray-400">-</span>;
+        // Handle cases where status might be missing or unexpected
+        return <span className="text-gray-400 dark:text-gray-500">-</span>;
     }
   };
+  // --- *** END MODIFICATION *** ---
+
+  // Consistent input styling
+  const dateInputClass =
+    "w-full h-10 px-3 py-2 bg-white dark:bg-[#101828] border border-gray-200 dark:border-[#1D2939] text-gray-800 dark:text-[#D0D5DD] rounded-md shadow-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600";
 
   return (
-    <div className="min-h-screen dark:bg-[#101828]">
-      <div className="bg-white/80 dark:bg-[#101828]/80 backdrop-blur-sm border-b border-gray-200 dark:border-[#1D2939] sticky top-0 z-30">
+    // Applied consistent background
+    <div className="min-h-screen bg-gray-50 dark:bg-[#101828]">
+      {/* --- Adjusted Header Styling --- */}
+      <div className="bg-white/80 dark:bg-[#101828]/80 backdrop-blur-sm border-b border-gray-200 dark:border-[#1D2939] sticky top-0 z-30 shadow-none lg:h-[132px]">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4 py-5">
+          {/* Adjusted padding/layout */}
+          <div className="flex items-center justify-between gap-4 py-6 lg:pt-8">
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold text-[#1D2939] dark:text-[#D0D5DD]">
+              <h1 className="text-3xl font-bold text-[#1D2939] dark:text-[#D0D5DD] lg:text-[30px] lg:leading-[36px] lg:font-bold">
                 Room Availability
               </h1>
               <p className="text-[0.9375rem] mt-1 text-gray-600 dark:text-[#98A2B3]">
@@ -312,182 +384,180 @@ export default function AvailableRoomsByDate() {
         </div>
       </div>
 
-      <main className="max-w-8xl bg-[#FFF] dark:bg-transparent min-h-screen mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row items-end justify-between gap-4 pb-4">
-          <div className="flex gap-x-4 items-end">
-            <div className="flex items-center gap-2 w-full">
-              <div className="grid gap-2 w-full">
-                <Label htmlFor="start-date">Start Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="start-date"
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal bg-white",
-                        !dateRange?.from && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange?.from ? (
-                        format(dateRange.from, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange?.from}
-                      onSelect={(day) =>
-                        setDateRange((prev) => ({
-                          ...prev,
-                          from: day,
-                          to:
-                            day && prev?.to && day > prev.to
-                              ? undefined
-                              : prev?.to,
-                        }))
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+      {/* Adjusted main background and shadow */}
+      <main className="max-w-8xl bg-gray-50 dark:bg-[#101828] min-h-screen mx-auto px-4 sm:px-6 lg:px-8 py-8 shadow-none">
+        {/* --- Date Picker Section with Heading --- */}
+        <div className="mb-6">
+          {/* --- ADDED HEADING/DESCRIPTION --- */}
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-[#D0D5DD] mb-1">
+            Select Date Range
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-[#98A2B3] mb-4">
+            Choose your desired check-in and check-out dates below to view room
+            availability.
+          </p>
+          {/* --- END HEADING/DESCRIPTION --- */}
+          <div className="flex flex-col md:flex-row items-end justify-start gap-4 pb-6 border-b dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row items-end gap-3 w-full md:w-auto">
+              <div className="grid gap-1.5 w-full sm:w-auto">
+                <Label
+                  htmlFor="start-date"
+                  className="text-sm font-medium text-gray-700 dark:text-[#98A2B3]"
+                >
+                  Start Date
+                </Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => handleDateChange(e, "start")}
+                  className={dateInputClass}
+                  min={todayStr} // Prevent selecting past dates
+                />
               </div>
-              <div className="grid gap-2 w-full">
-                <Label htmlFor="end-date">End Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="end-date"
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal bg-white",
-                        !dateRange?.to && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange?.to ? (
-                        format(dateRange.to, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange?.to}
-                      onSelect={(day) =>
-                        setDateRange((prev) => ({ ...prev, to: day }))
-                      }
-                      disabled={(date) =>
-                        dateRange?.from ? date < dateRange.from : false
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+              <div className="grid gap-1.5 w-full sm:w-auto">
+                <Label
+                  htmlFor="end-date"
+                  className="text-sm font-medium text-gray-700 dark:text-[#98A2B3]"
+                >
+                  End Date
+                </Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => handleDateChange(e, "end")}
+                  className={dateInputClass}
+                  min={startDate} // Prevent end date being before start date
+                />
               </div>
+              <Button
+                onClick={handleSearch}
+                disabled={!startDate || !endDate || isFetching}
+                // Applied shadow-none
+                className="bg-blue-600 hover:bg-blue-700 text-[#FFF] text-[0.9375rem] font-medium border-none shadow-none w-full sm:w-auto"
+              >
+                {isFetching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  "Find Rooms"
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={handleSearch}
-              disabled={!startDate || !endDate || isFetching}
-              className="bg-blue-600 text-[#FFF] text-[0.9375rem] font-medium border-none"
-            >
-              {isFetching ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                "Find Rooms"
-              )}
-            </Button>
           </div>
         </div>
+        {/* --- End Date Picker Section --- */}
 
+        {/* Loading State */}
         {isFetching && (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
           </div>
         )}
+
+        {/* Error State */}
         {isError && !isFetching && (
-          <div className="p-6 text-center text-red-600 bg-red-50 border border-red-200 rounded-lg">
+          // Applied shadow-none
+          <div className="p-6 text-center text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/60 rounded-lg shadow-none">
             <AlertCircle className="mx-auto h-8 w-8 mb-2" />
             <h3 className="font-semibold">An Error Occurred</h3>
-            <p>{error.message}</p>
+            <p>{error?.message || "Could not fetch availability data."}</p>
           </div>
         )}
+
+        {/* Data Display */}
         {data && !isFetching && (
-          <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow bg-white dark:bg-[#171F2F] overflow-hidden">
-            <div className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          // Applied shadow-none to table container
+          <div className="rounded-lg border border-gray-200 dark:border-[#1D2939] shadow-none bg-white dark:bg-[#171F2F] overflow-hidden">
+            <div className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center border-b dark:border-gray-700">
+              {/* Room Type Filter Badges */}
               <div className="flex items-center gap-2 flex-wrap">
+                {/* Applied shadow-none */}
                 <Badge
                   onClick={() => setSelectedRoomTypeId(null)}
                   className={cn(
-                    "cursor-pointer text-[13px]",
+                    "cursor-pointer text-[13px] shadow-none", // Added shadow-none
                     selectedRoomTypeId === null
                       ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "text-[#1547E5] bg-[#EFF6FF] hover:bg-blue-200"
+                      : "text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-700/60" // Adjusted non-active style
                   )}
                 >
                   All Types
                 </Badge>
                 {hotel?.room_type.map((rt) => (
+                  // Applied shadow-none
                   <Badge
                     key={rt.id}
                     onClick={() => setSelectedRoomTypeId(rt.id)}
                     className={cn(
-                      "cursor-pointer text-[13px]",
+                      "cursor-pointer text-[13px] shadow-none", // Added shadow-none
                       selectedRoomTypeId === rt.id
                         ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : "text-[#1547E5] bg-[#EFF6FF] hover:bg-blue-200"
+                        : "text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-700/60" // Adjusted non-active style
                     )}
                   >
                     {rt.name}
                   </Badge>
                 ))}
               </div>
+              {/* Search/Filter Input */}
               <div className="relative w-full sm:w-64">
-                <ListFilter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <ListFilter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                {/* Applied shadow-none */}
                 <Input
-                  placeholder="Filter by code or type..."
+                  placeholder="Filter by Room Code..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white dark:bg-[#101828]"
+                  className="pl-10 bg-white dark:bg-[#101828] border-gray-200 dark:border-[#1D2939] shadow-none focus:ring-blue-500 focus:border-blue-600 dark:text-gray-200 dark:placeholder:text-gray-500"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 px-4">
-              <strong>Key:</strong>
+            {/* --- *** MODIFIED Availability Key *** --- */}
+            <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 my-3 px-4">
+              <strong className="mr-1">Key:</strong>
               <div className="flex items-center gap-1 text-green-600">
-                <Check size={16} /> Available
+                <Check size={14} /> Available
               </div>
               <div className="flex items-center gap-1 text-amber-600">
-                <Minus size={16} /> Booked
+                <span className="font-semibold text-xs text-amber-700 dark:text-amber-400">
+                  BKD
+                </span>{" "}
+                = Booked
               </div>
               <div className="flex items-center gap-1 text-rose-600">
-                <X size={16} /> Maintenance
+                <span className="font-semibold text-xs text-rose-700 dark:text-rose-400">
+                  MNC
+                </span>{" "}
+                = Maintenance
               </div>
             </div>
+            {/* --- *** END MODIFICATION *** --- */}
+            {/* Table */}
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="min-w-[800px]">
+                {" "}
+                {/* Added min-width */}
                 <TableHeader>
-                  <TableRow className="hover:bg-transparent border-y-2 border-gray-300 dark:border-y-[#1D2939]">
-                    <TableHead className="h-14 px-6 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#101828] dark:to-[#101828]/90 shadow sticky left-0 z-20 min-w-[200px] border-r border-gray-300 dark:border-r-[#1D2939]">
+                  <TableRow className="hover:bg-transparent border-y border-gray-200 dark:border-y-[#1D2939]">
+                    <TableHead className="h-12 px-4 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gray-50 dark:bg-[#101828]/90 shadow-none sticky left-0 z-20 min-w-[180px] border-r border-gray-200 dark:border-r-[#1D2939]">
                       Room
                     </TableHead>
                     {dateHeaders.map((date) => (
                       <TableHead
                         key={date.toString()}
-                        className="h-14 px-6 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#101828] dark:to-[#101828]/90 text-center border-r border-gray-300 dark:border-r-[#1D2939]"
+                        className="h-12 px-4 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gray-50 dark:bg-[#101828]/90 text-center border-r border-gray-200 dark:border-r-[#1D2939] shadow-none min-w-[80px]" // Added min-width
                       >
                         {format(date, "MMM dd")}
                       </TableHead>
                     ))}
-                    <TableHead className="h-14 px-6 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#101828] dark:to-[#101828]/90 text-center sticky right-[120px] z-20 min-w-[120px] border-x border-gray-300 dark:border-x-[#1D2939]">
+                    <TableHead className="h-12 px-4 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gray-50 dark:bg-[#101828]/90 text-center sticky right-[100px] z-20 min-w-[100px] border-x border-gray-200 dark:border-x-[#1D2939] shadow-none">
+                      {" "}
+                      {/* Adjusted widths/positions */}
                       Details
                     </TableHead>
-                    <TableHead className="h-14 px-6 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gradient-to-b from-slate-50 to-slate-100 dark:from-[#101828] dark:to-[#101828]/90 text-center sticky right-0 z-20 min-w-[120px] border-l border-gray-300 dark:border-l-[#1D2939]">
+                    <TableHead className="h-12 px-4 font-semibold text-[13px] uppercase text-[#667085] dark:text-[#98A2B3] bg-gray-50 dark:bg-[#101828]/90 text-center sticky right-0 z-20 min-w-[100px] border-l border-gray-200 dark:border-l-[#1D2939] shadow-none">
+                      {" "}
+                      {/* Adjusted widths/positions */}
                       Booking
                     </TableHead>
                   </TableRow>
@@ -499,44 +569,52 @@ export default function AvailableRoomsByDate() {
                         key={room.room_id}
                         className="border-b border-gray-200 dark:border-b-[#1D2939] hover:bg-indigo-50/30 dark:hover:bg-[#1C2433]"
                       >
-                        <TableCell className="px-6 py-4 sticky left-0 z-10 bg-white dark:bg-[#171F2F] border-r border-gray-200 dark:border-r-[#1D2939]">
-                          <div className="font-bold text-gray-800 dark:text-gray-200">
+                        <TableCell className="px-4 py-3 sticky left-0 z-10 bg-white dark:bg-[#171F2F] border-r border-gray-200 dark:border-r-[#1D2939]">
+                          <div className="font-semibold text-sm text-gray-800 dark:text-gray-200">
                             {room.room_code}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             {room.room_type_name}
                           </div>
                         </TableCell>
                         {dateHeaders.map((date) => {
+                          const dateString = format(date, "yyyy-MM-dd");
                           const day = room.availability.find(
-                            (d) => d.date === format(date, "yyyy-MM-dd")
+                            (d) => d.date === dateString
                           );
                           return (
                             <TableCell
-                              key={format(date, "yyyy-MM-dd")}
-                              className="px-6 py-4 text-center font-semibold text-xs border-r border-gray-200 dark:border-r-[#1D2939]"
+                              key={dateString}
+                              className="px-4 py-3 text-center border-r border-gray-200 dark:border-r-[#1D2939]"
                             >
-                              {renderStatusCell(day?.availability_status || "")}
+                              {renderStatusCell(day?.availability_status)}
                             </TableCell>
                           );
                         })}
-                        <TableCell className="px-6 py-4 text-center sticky right-[120px] z-10 bg-white dark:bg-[#171F2F] border-x border-gray-200 dark:border-x-[#1D2939]">
+                        <TableCell className="px-4 py-3 text-center sticky right-[100px] z-10 bg-white dark:bg-[#171F2F] border-x border-gray-200 dark:border-x-[#1D2939]">
+                          {" "}
+                          {/* Adjusted widths/positions */}
+                          {/* Applied shadow-none */}
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => setSelectedRoomId(room.room_id)}
-                            className="text-blue-600 h-8 w-8 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                            className="text-blue-600 h-8 w-8 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/40 shadow-none"
                           >
                             <Eye className="h-5 w-5" />
                           </Button>
                         </TableCell>
-                        <TableCell className="px-6 py-4 text-center sticky right-0 z-10 bg-white dark:bg-[#171F2F] border-l border-gray-200 dark:border-l-[#1D2939]">
+                        <TableCell className="px-4 py-3 text-center sticky right-0 z-10 bg-white dark:bg-[#171F2F] border-l border-gray-200 dark:border-l-[#1D2939]">
+                          {" "}
+                          {/* Adjusted widths/positions */}
+                          {/* Applied shadow-none */}
                           <Button
                             size="sm"
                             onClick={() => navigate("/bookings/new-booking")}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            className="bg-blue-600 text-white hover:bg-blue-700 shadow-none rounded-md px-3" // Adjusted styling
                           >
-                            <Ticket className="h-4 w-4 mr-2" />
+                            <Ticket className="h-4 w-4 mr-1.5" />{" "}
+                            {/* Adjusted margin */}
                             Book
                           </Button>
                         </TableCell>
@@ -545,36 +623,44 @@ export default function AvailableRoomsByDate() {
                   ) : (
                     <TableRow>
                       <TableCell
+                        // Calculate colspan dynamically
                         colSpan={dateHeaders.length + 3}
-                        className="h-48 text-center text-gray-500"
+                        className="h-48 text-center text-gray-500 dark:text-gray-400"
                       >
                         <Bed className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                        <h3 className="text-xl font-semibold">
+                        <h3 className="text-xl font-semibold mb-1">
                           No Rooms Found
                         </h3>
-                        <p>No rooms match your current criteria.</p>
+                        <p>
+                          No rooms match your current criteria for the selected
+                          dates.
+                        </p>
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </div>
-            <div className="flex items-center justify-between gap-4 mt-4 px-4 pb-4">
+            {/* Pagination */}
+            <div className="flex items-center justify-between gap-4 mt-4 px-4 pb-4 border-t dark:border-gray-700 pt-4">
               <div className="flex-1 text-sm text-gray-600 dark:text-[#98A2B3]">
-                Page {pagination.pageIndex + 1} of {pageCount || 1}
+                Page {pagination.pageIndex + 1} of {pageCount || 1} (
+                {filteredRooms.length} rooms)
               </div>
               <div className="flex items-center gap-2">
+                {/* Applied shadow-none */}
                 <Button
                   variant="outline"
-                  className="h-9 w-9 p-0"
+                  className="h-9 w-9 p-0 shadow-none dark:bg-[#101828] dark:border-[#1D2939]"
                   onClick={() => setPagination((p) => ({ ...p, pageIndex: 0 }))}
                   disabled={pagination.pageIndex === 0}
                 >
                   <ChevronFirst className="h-5 w-5" />
                 </Button>
+                {/* Applied shadow-none */}
                 <Button
                   variant="outline"
-                  className="h-9 w-9 p-0"
+                  className="h-9 w-9 p-0 shadow-none dark:bg-[#101828] dark:border-[#1D2939]"
                   onClick={() =>
                     setPagination((p) => ({ ...p, pageIndex: p.pageIndex - 1 }))
                   }
@@ -582,9 +668,10 @@ export default function AvailableRoomsByDate() {
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
+                {/* Applied shadow-none */}
                 <Button
                   variant="outline"
-                  className="h-9 w-9 p-0"
+                  className="h-9 w-9 p-0 shadow-none dark:bg-[#101828] dark:border-[#1D2939]"
                   onClick={() =>
                     setPagination((p) => ({ ...p, pageIndex: p.pageIndex + 1 }))
                   }
@@ -592,9 +679,10 @@ export default function AvailableRoomsByDate() {
                 >
                   <ChevronRight className="h-5 w-5" />
                 </Button>
+                {/* Applied shadow-none */}
                 <Button
                   variant="outline"
-                  className="h-9 w-9 p-0"
+                  className="h-9 w-9 p-0 shadow-none dark:bg-[#101828] dark:border-[#1D2939]"
                   onClick={() =>
                     setPagination((p) => ({ ...p, pageIndex: pageCount - 1 }))
                   }
@@ -607,18 +695,23 @@ export default function AvailableRoomsByDate() {
           </div>
         )}
       </main>
+      {/* Room Details Sheet */}
       <Sheet
         open={!!selectedRoomId}
         onOpenChange={(isOpen) => !isOpen && setSelectedRoomId(null)}
       >
-        <SheetContent className="w-full sm:max-w-[540px] p-0 bg-white dark:bg-[#101828] border-l dark:border-l-[#1D2939]">
-          <SheetHeader className="p-6 border-b border-gray-200 dark:border-b-[#1D2939] bg-white dark:bg-[#101828]">
+        {/* Applied shadow-none to SheetContent */}
+        <SheetContent className="w-full sm:max-w-[540px] p-0 bg-white dark:bg-[#101828] border-l dark:border-l-[#1D2939] shadow-none">
+          {/* Applied shadow-none */}
+          <SheetHeader className="p-6 border-b border-gray-200 dark:border-b-[#1D2939] bg-white dark:bg-[#101828] shadow-none">
             <SheetTitle className="text-[#1D2939] text-2xl dark:text-[#D0D5DD]">
               Room Details:{" "}
               {data?.rooms.find((r) => r.room_id === selectedRoomId)?.room_code}
             </SheetTitle>
           </SheetHeader>
-          <div className="h-full overflow-y-auto">
+          <div className="h-[calc(100vh-theme(space.24))] overflow-y-auto">
+            {" "}
+            {/* Adjusted height */}
             {selectedRoomId && <RoomDetailsView roomId={selectedRoomId} />}
           </div>
         </SheetContent>
