@@ -1832,14 +1832,12 @@ export default function HotelRooms() {
         header: () => <div className="text-center">View</div>,
         cell: ({ row }) => (
           <div className="text-center">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 rounded-full bg-white dark:bg-[#101828] border-gray-200 dark:border-[#1D2939] shadow-none hover:bg-indigo-50 dark:hover:bg-[#1C2433] text-indigo-600 dark:text-indigo-400"
+            <button
+              className="h-9 w-9 shadow-none dark:text-blue-600"
               onClick={() => navigate(`/rooms/${row.original.id}`)}
             >
-              <Eye className="h-5 w-5" />
-            </Button>
+              <Eye className="h-4 w-4 text-blue-600" />
+            </button>
           </div>
         ),
         size: 80,
@@ -1951,8 +1949,8 @@ export default function HotelRooms() {
   ];
 
   return (
-    <div className="flex-1 space-y-6 bg-gray-50 dark:bg-[#101828]">
-      <Card className="border-none p-0 bg-[#FFF] dark:bg-[#171F2F] rounded-none shadow-none">
+    <div className="flex-1 space-y-6 bg-red-500 dark:bg-[#101828]">
+      <Card className="border-none p-0 bg-[#F9FAFB] dark:bg-[#171F2F] rounded-none shadow-none">
         {/* --- MODIFIED CARD HEADER (height, text size) --- */}
         <CardHeader className="bg-white/80 dark:bg-[#101828]/80 backdrop-blur-sm border-b border-gray-200 dark:border-[#1D2939] sticky top-0 z-30 mb-4 pt-4 lg:h-[132px]">
           <div className="flex items-center justify-between">
