@@ -1,6 +1,6 @@
 // src/pages/rooms/new-room.tsx
 "use client";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -61,6 +61,13 @@ interface RoomTypeOption {
 interface AmenityOption {
   id: string;
   name: string;
+}
+
+// --- MODIFIED: New Room type from API response ---
+interface NewRoomResponse {
+  id: string;
+  code: string;
+  // ... other fields
 }
 
 const FILE_SIZE_LIMIT = 3 * 1024 * 1024; // 3 MB
@@ -155,7 +162,7 @@ const createRoomWithFile = async (data: any) => {
   const response = await hotelClient.post("rooms/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return response.data;
+  return response.data; // This should return the NewRoomResponse
 };
 
 const bulkCreateRoomsWithFile = async (data: any) => {
@@ -185,6 +192,12 @@ const inputBaseClass =
 export default function NewRoomPage() {
   const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
   const { hotelId } = useAuthStore();
+  const navigate = useNavigate(); // Get navigate function
+
+  // --- NEW STATE for 2-step flow ---
+  const [newlyCreatedRoomId, setNewlyCreatedRoomId] = useState<string | null>(
+    null
+  );
 
   const {
     data: roomTypes,
@@ -230,7 +243,7 @@ export default function NewRoomPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#101828]">
-      <header className="bg-white/80 dark:bg-[#101828d1] backdrop-blur-sm border-b rounded dark:border-gray-800 sticky top-0 z-30 px-4 md:px-6 py-4">
+      <header className="bg-white/80 dark:bg-[#101828d1] backdrop-blur-sm border-b rounded dark:border-gray-800 sticky top-0 z-30 px-4 md:px-6 py-4 lg:h-[132px]">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <Link
@@ -248,7 +261,10 @@ export default function NewRoomPage() {
             {TABS_CONFIG.map((tab) => (
               <button
                 key={tab.value}
-                onClick={() => setActiveTab(tab.value as "single" | "bulk")}
+                onClick={() => {
+                  setActiveTab(tab.value as "single" | "bulk");
+                  setNewlyCreatedRoomId(null); // Reset step 2 if tabs are switched
+                }}
                 className={cn(
                   "flex items-center gap-2 px-3 md:px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 cursor-pointer",
                   activeTab === tab.value
@@ -265,13 +281,27 @@ export default function NewRoomPage() {
       </header>
 
       <main>
-        {activeTab === "single" && (
+        {/* --- MODIFIED: Conditional Rendering for 2-Step Flow --- */}
+        {activeTab === "single" && !newlyCreatedRoomId && (
           <SingleRoomFormWrapper
             hotelId={hotelId}
             roomTypes={roomTypes ?? []}
             allAmenities={allAmenities ?? []}
+            // Pass setter to update state on success
+            onRoomCreated={(roomId) => setNewlyCreatedRoomId(roomId)}
           />
         )}
+        {activeTab === "single" && newlyCreatedRoomId && (
+          <AdditionalImageUploader
+            roomId={newlyCreatedRoomId}
+            onComplete={() => {
+              setNewlyCreatedRoomId(null); // Reset state
+              navigate("/rooms/hotel-rooms"); // Navigate on complete
+            }}
+          />
+        )}
+        {/* --- END MODIFICATION --- */}
+
         {activeTab === "bulk" && (
           <BulkRoomFormWrapper
             hotelId={hotelId}
@@ -291,11 +321,17 @@ interface WrapperProps {
   allAmenities: AmenityOption[];
 }
 
+// --- MODIFIED: Added onRoomCreated prop ---
+interface SingleRoomWrapperProps extends WrapperProps {
+  onRoomCreated: (roomId: string) => void;
+}
+
 function SingleRoomFormWrapper({
   hotelId,
   roomTypes,
   allAmenities,
-}: WrapperProps) {
+  onRoomCreated,
+}: SingleRoomWrapperProps) {
   const form = useForm<SingleRoomFormData>({
     resolver: yupResolver(singleRoomSchema),
     mode: "onChange",
@@ -313,6 +349,7 @@ function SingleRoomFormWrapper({
         form={form}
         roomTypes={roomTypes}
         allAmenities={allAmenities}
+        onRoomCreated={onRoomCreated} // Pass prop down
       />
       <DetailsPreview
         control={form.control}
@@ -355,6 +392,7 @@ function BulkRoomFormWrapper({
   );
 }
 
+// ... (DetailsPreview and BulkDetailsPreview components remain unchanged) ...
 function DetailsPreview({ control, roomTypes, allAmenities }: any) {
   const watchedValues = useWatch({ control });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -411,7 +449,7 @@ function DetailsPreview({ control, roomTypes, allAmenities }: any) {
             label="Price"
             value={
               watchedValues.price_per_night
-                ? `$${Number(watchedValues.price_per_night).toFixed(2)} / night`
+                ? `$${Number(watchedValues.price_per_night)} / night`
                 : ""
             }
           />
@@ -498,7 +536,7 @@ function BulkDetailsPreview({ control, roomTypes, allAmenities }: any) {
             label="Price per Room"
             value={
               watchedValues.price_per_night
-                ? `$${Number(watchedValues.price_per_night).toFixed(2)} / night`
+                ? `$${Number(watchedValues.price_per_night)} / night`
                 : ""
             }
           />
@@ -530,6 +568,12 @@ interface FormComponentProps {
   roomTypes: RoomTypeOption[];
   allAmenities: AmenityOption[];
 }
+
+// --- MODIFIED: Added onRoomCreated prop ---
+interface SingleRoomFormProps extends FormComponentProps {
+  onRoomCreated: (roomId: string) => void;
+}
+
 const AmenitiesSelector = ({ allAmenities, field }: any) => {
   const handleToggle = (id: string) => {
     const currentValue = field.value ?? [];
@@ -600,7 +644,7 @@ const FormLabelWithInfo = ({
   </div>
 );
 
-// --- MODIFIED IMAGE DROPZONE COMPONENT ---
+// --- (ImageDropzone component remains unchanged) ---
 const ImageDropzone = ({ field }: { field: any }) => {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -692,21 +736,29 @@ const ImageDropzone = ({ field }: { field: any }) => {
   );
 };
 
-function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
+// --- MODIFIED: SingleRoomForm to call onRoomCreated ---
+function SingleRoomForm({
+  form,
+  roomTypes,
+  allAmenities,
+  onRoomCreated,
+}: SingleRoomFormProps) {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Navigation handled by parent
 
   const mutation = useMutation({
     mutationFn: createRoomWithFile,
-    onSuccess: (data) => {
-      toast.success("Room Created Successfully!", {
-        description: `The room "${data.code}" has been added.`,
+    onSuccess: (data: NewRoomResponse) => {
+      // Use specific response type
+      toast.success("Step 1 Complete: Room Created!", {
+        description: `The room "${data.code}" has been added. Now, add more images.`,
         icon: <CheckCircle className="h-5 w-5 text-green-500" />,
       });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       queryClient.invalidateQueries({ queryKey: ["hotelDetails"] });
       form.reset();
-      setTimeout(() => navigate("/rooms/hotel-rooms"), 1500);
+      // --- NEW ---
+      onRoomCreated(data.id); // Trigger Step 2
     },
     onError: (error: any) => {
       toast.error("Creation Failed", {
@@ -730,7 +782,7 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
       >
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Core Details
+            Step 1: Core Details
           </h2>
           <Card className="bg-[#FFF] dark:bg-gray-900 rounded-md dark:border-gray-800 shadow-none border border-[#DADCE0]">
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 md:p-6">
@@ -766,6 +818,7 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                     <FormControl>
                       <Input
                         type="number"
+                        min="1"
                         className={cn(inputBaseClass, focusRingClass)}
                         placeholder="e.g. 2"
                         {...field}
@@ -819,6 +872,7 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                     <FormControl>
                       <Input
                         type="number"
+                        min="0"
                         className={cn(inputBaseClass, focusRingClass)}
                         placeholder="e.g. 3"
                         {...field}
@@ -858,7 +912,7 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
 
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Pricing & Image
+            Pricing & Primary Image
           </h2>
           <Card className="bg-[#FFF] dark:bg-gray-900 rounded-md dark:border-gray-800 shadow-none border border-[#DADCE0]">
             <CardContent className="space-y-6 p-4 md:p-6">
@@ -874,9 +928,11 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                     <FormControl>
                       <Input
                         type="number"
+                        min="0"
                         className={cn(inputBaseClass, focusRingClass)}
                         placeholder="e.g. 150"
                         {...field}
+                        step={0.01}
                       />
                     </FormControl>
                     <FormMessage />
@@ -890,7 +946,7 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                   <FormItem>
                     <FormLabelWithInfo
                       label="Primary Image"
-                      infoText="Upload a high-quality image for this room (JPG, PNG, max 3MB)."
+                      infoText="Upload one high-quality image for this room (JPG, PNG, max 3MB)."
                     />
                     <FormControl>
                       <ImageDropzone field={field} />
@@ -942,14 +998,14 @@ function SingleRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
             {mutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Create Room
+            Create Room & Add Images
           </Button>
         </div>
       </form>
     </Form>
   );
 }
-
+// ... (BulkRoomForm component remains unchanged) ...
 function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -1036,6 +1092,7 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                     <FormControl>
                       <Input
                         type="number"
+                        min="1"
                         placeholder="e.g. 10"
                         className={cn(inputBaseClass, focusRingClass)}
                         {...field}
@@ -1058,8 +1115,10 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                       <Input
                         className={cn(inputBaseClass, focusRingClass)}
                         type="number"
+                        min="0"
                         placeholder="e.g. 150"
                         {...field}
+                        step={0.01}
                       />
                     </FormControl>
                     <FormMessage />
@@ -1078,6 +1137,7 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                     <FormControl>
                       <Input
                         type="number"
+                        min="0"
                         className={cn(inputBaseClass, focusRingClass)}
                         placeholder="e.g. 3"
                         {...field}
@@ -1093,7 +1153,7 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabelWithInfo
-                      label="Common Description (Optional)"
+                      label="Common Room Description (Optional)"
                       infoText="A shared description that will be applied to all rooms created in this batch."
                     />
                     <FormControl>
@@ -1175,6 +1235,253 @@ function BulkRoomForm({ form, roomTypes, allAmenities }: FormComponentProps) {
         </div>
       </form>
     </Form>
+  );
+}
+
+// --- NEW: Multiple Image Uploader Component ---
+const MAX_FILES = 5;
+
+// New Dropzone component for multiple files
+function MultipleImageDropzone({
+  onFilesSelected,
+}: {
+  onFilesSelected: (files: File[]) => void;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      onFilesSelected(filesArray);
+      // Reset input value to allow re-uploading the same file
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files) {
+      const filesArray = Array.from(e.dataTransfer.files);
+      onFilesSelected(filesArray);
+    }
+  };
+
+  return (
+    <div
+      onDragEnter={onDragEnter}
+      onDragOver={(e) => e.preventDefault()}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onClick={() => inputRef.current?.click()}
+      className={cn(
+        "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
+        isDragging
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+          : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800"
+      )}
+    >
+      <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+        <UploadCloud className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
+        <p className="mb-1 text-sm text-gray-500 dark:text-gray-400">
+          <span className="font-semibold">Click to upload</span> or drag and
+          drop
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Upload up to {MAX_FILES} images (PNG, JPG, max 3MB each)
+        </p>
+      </div>
+      <Input
+        ref={inputRef}
+        type="file"
+        accept="image/png, image/jpeg, image/jpg"
+        className="hidden"
+        multiple // Allow multiple files
+        onChange={handleFileChange}
+      />
+    </div>
+  );
+}
+
+// New component for the Step 2 UI
+function AdditionalImageUploader({
+  roomId,
+  onComplete,
+}: {
+  roomId: string;
+  onComplete: () => void;
+}) {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const queryClient = useQueryClient();
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("room_id", roomId);
+      formData.append("is_active", "true");
+      return hotelClient.post("/room-images/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+    onSuccess: (data, file) => {
+      toast.success(`Image "${file.name}" uploaded successfully.`);
+    },
+    onError: (error: any, file) => {
+      toast.error(`Failed to upload "${file.name}": ${error.message}`);
+    },
+  });
+
+  const handleFilesSelected = (files: File[]) => {
+    const newFiles: File[] = [];
+    const errors: string[] = [];
+
+    for (const file of files) {
+      if (selectedFiles.length + newFiles.length >= MAX_FILES) {
+        errors.push(`You can only upload a maximum of ${MAX_FILES} images.`);
+        break; // Stop processing if max is reached
+      }
+      if (file.size > FILE_SIZE_LIMIT) {
+        errors.push(`"${file.name}" is too large (max 3MB).`);
+        continue;
+      }
+      if (!SUPPORTED_FORMATS.includes(file.type)) {
+        errors.push(`"${file.name}" has an unsupported format (use JPG/PNG).`);
+        continue;
+      }
+      newFiles.push(file);
+    }
+
+    if (errors.length > 0) {
+      toast.warning("Some files were not added:", {
+        description: (
+          <ul>
+            {errors.map((e, i) => (
+              <li key={i}>{e}</li>
+            ))}
+          </ul>
+        ),
+      });
+    }
+
+    setSelectedFiles((prev) => [...prev, ...newFiles].slice(0, MAX_FILES));
+  };
+
+  const handleRemoveFile = (indexToRemove: number) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const handleUploadAndFinish = async () => {
+    if (selectedFiles.length === 0) {
+      onComplete(); // Just finish if no files
+      return;
+    }
+
+    const uploadPromises = selectedFiles.map((file) =>
+      uploadImageMutation.mutateAsync(file)
+    );
+
+    const results = await Promise.allSettled(uploadPromises);
+
+    const failedCount = results.filter((r) => r.status === "rejected").length;
+
+    if (failedCount > 0) {
+      toast.error(`${failedCount} image(s) failed to upload.`, {
+        description:
+          "Please check the image format or size and try again later.",
+      });
+    } else {
+      toast.success("All additional images uploaded successfully!");
+    }
+
+    // Invalidate room details query to show new images if user navigates there
+    queryClient.invalidateQueries({ queryKey: ["roomDetails", roomId] });
+    onComplete();
+  };
+
+  return (
+    <div className="p-4 md:p-6">
+      <Card className="lg:col-span-2 bg-[#FFF] dark:bg-gray-900 rounded-md dark:border-gray-800 shadow-none border border-[#DADCE0]">
+        <CardHeader>
+          <CardTitle className="text-gray-900 dark:text-gray-100">
+            Step 2: Add Additional Images (Optional)
+          </CardTitle>
+          <CardDescription className="dark:text-gray-400">
+            The room is created. You can now add up to {MAX_FILES} gallery
+            images.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <MultipleImageDropzone onFilesSelected={handleFilesSelected} />
+
+          {selectedFiles.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                Image Previews ({selectedFiles.length} / {MAX_FILES})
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="relative group aspect-square">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-full h-full object-cover rounded-md border dark:border-gray-700"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="absolute top-1 right-1 h-6 w-6 rounded-full bg-red-600/80 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1.5 rounded-b-md">
+                      <p className="text-xs text-white truncate">{file.name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+        <CardContent className="flex justify-end gap-3 pt-6">
+          <Button
+            type="button"
+            variant="outline"
+            className="shadow-none border-gray-300 dark:border-gray-700"
+            onClick={onComplete}
+            disabled={uploadImageMutation.isPending}
+          >
+            Skip & Finish
+          </Button>
+          <Button
+            type="button"
+            className="bg-blue-600 hover:bg-blue-700 shadow-none"
+            onClick={handleUploadAndFinish}
+            disabled={
+              uploadImageMutation.isPending || selectedFiles.length === 0
+            }
+          >
+            {uploadImageMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="mr-2 h-4 w-4" />
+            )}
+            Upload & Finish ({selectedFiles.length})
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

@@ -51,7 +51,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import EditRoomForm from "./edit-room-dialog";
+import { EditRoomForm } from "./edit-room-dialog";
 
 // --- TYPE DEFINITIONS ---
 interface Amenity {
@@ -64,7 +64,9 @@ interface Amenity {
 
 interface GalleryImage {
   id: string;
-  url: string;
+  // --- FIX: Based on API response, this should be 'image' ---
+  image: string;
+  image_url?: string; // Add this field based on API
   code?: string;
 }
 
@@ -82,8 +84,8 @@ interface RoomDetails {
   id: string;
   code: string;
   description: string;
-  image: string;
-  images: GalleryImage[];
+  image: string; // This is the Primary Image URL
+  images: GalleryImage[]; // This is the Gallery Image array
   max_occupancy: number;
   price_per_night: number;
   availability_status: "Available" | "Booked" | "Maintenance";
@@ -101,6 +103,7 @@ interface RoomDetails {
 
 // --- MOCK DATA FOR REVIEWS ---
 const mockReviews: Review[] = [
+  // ... (mock data remains unchanged) ...
   {
     id: "rev_1",
     authorName: "Elena V.",
@@ -109,51 +112,6 @@ const mockReviews: Review[] = [
     createdAt: "2025-09-15T10:00:00Z",
     title: "Absolutely Perfect Stay!",
     body: "The room was spotless and beautifully decorated. Had everything we needed and more. The view was breathtaking. Will definitely be coming back!",
-  },
-  {
-    id: "rev_2",
-    authorName: "David L.",
-    authorAvatarUrl: "https://i.pravatar.cc/48?u=2",
-    rating: 4,
-    createdAt: "2025-09-12T14:30:00Z",
-    title: "Great Value and Location",
-    body: "Very comfortable and clean. The location is excellent for exploring the city. Lost one star as the Wi-Fi was a bit slow, but overall a fantastic experience.",
-  },
-  {
-    id: "rev_3",
-    authorName: "Aisha K.",
-    authorAvatarUrl: "https://i.pravatar.cc/48?u=3",
-    rating: 5,
-    createdAt: "2025-09-10T08:45:00Z",
-    title: "Exceeded All Expectations",
-    body: "From the moment we checked in, the service was impeccable. The amenities are top-notch. It felt like a true luxury experience. Highly recommended.",
-  },
-  {
-    id: "rev_4",
-    authorName: "Marcus B.",
-    authorAvatarUrl: "https://i.pravatar.cc/48?u=4",
-    rating: 3,
-    createdAt: "2025-09-08T20:15:00Z",
-    title: "Decent, but could be better",
-    body: "The room was fine and served its purpose. However, the decor felt a bit dated and some minor maintenance issues were noticeable. It was an okay stay for the price.",
-  },
-  {
-    id: "rev_5",
-    authorName: "Sophie T.",
-    authorAvatarUrl: "https://i.pravatar.cc/48?u=5",
-    rating: 4,
-    createdAt: "2025-09-05T11:00:00Z",
-    title: "Comfortable and Quiet",
-    body: "I was looking for a peaceful getaway and this room delivered. It was very quiet and the bed was incredibly comfortable. A great place to relax and recharge.",
-  },
-  {
-    id: "rev_6",
-    authorName: "Chen W.",
-    authorAvatarUrl: "https://i.pravatar.cc/48?u=6",
-    rating: 5,
-    createdAt: "2025-09-02T16:00:00Z",
-    title: "Wonderful Family Trip",
-    body: "Spacious enough for our family of four. The kids loved the amenities and the staff were very accommodating. We created some wonderful memories here.",
   },
 ];
 
@@ -174,11 +132,15 @@ export default function RoomDetailsPage() {
       return; // Prevent sheet from closing
     }
     setIsSheetOpen(open);
+    if (!open) {
+      setIsFormDirty(false); // Reset dirty state when closed
+    }
   };
 
   const handleDiscardChanges = () => {
     setIsFormDirty(false);
     setIsSheetOpen(false);
+    setShowUnsavedChangesDialog(false); // Close dialog
   };
   // --- End of Enhancement ---
 
@@ -195,25 +157,45 @@ export default function RoomDetailsPage() {
     enabled: !!room_id,
   });
 
+  // --- MODIFICATION: Updated gallery logic to match API response ---
   const galleryImages = useMemo(() => {
-    if (!room)
-      return [
-        "https://placehold.co/600x400",
-        "https://placehold.co/600x400",
-        "https://placehold.co/600x400",
-        "https://placehold.co/600x400",
-      ];
-    const primaryImage = room.image;
-    const additionalImages = room.images?.map((img) => img.url) || [];
-    const allImages = [...new Set([primaryImage, ...additionalImages])].filter(
-      Boolean
-    );
+    if (!room) return []; // Return empty array if no room
+
+    const allImages: string[] = [];
+
+    // 1. Add the primary image (from `room.image`)
+    if (room.image) {
+      allImages.push(room.image);
+    }
+
+    // 2. Add the gallery images (from `room.images` array, using `img.image`)
+    if (room.images && Array.isArray(room.images)) {
+      room.images.forEach((imgObj) => {
+        // Use 'image' field from the object, as per API response
+        if (imgObj.image && imgObj.image !== room.image) {
+          // Avoid duplicates
+          allImages.push(imgObj.image);
+        }
+      });
+    }
+
+    // If no images were found at all, add one placeholder
+    if (allImages.length === 0) {
+      allImages.push("https://placehold.co/600x400");
+    }
+
+    // Pad with placeholders up to 4, as per original logic
     const resultImages = [...allImages];
-    while (resultImages.length < 4) {
+    while (resultImages.length < 4 && resultImages.length > 0) {
       resultImages.push("https://placehold.co/600x400");
     }
-    return resultImages.slice(0, 4);
+
+    // Return exactly 4 images, or all images if more than 4
+    return allImages.length >= 4
+      ? allImages.slice(0)
+      : resultImages.slice(0, 4);
   }, [room]);
+  // --- END MODIFICATION ---
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ status }: { status: string }) =>
@@ -572,8 +554,12 @@ export default function RoomDetailsPage() {
           <div className="w-full flex flex-col lg:flex-row items-start gap-8">
             <div className="w-full lg:w-[55%] xl:w-[50%] flex-shrink-0 space-y-4 lg:sticky lg:top-36">
               <div className="relative group rounded-xl overflow-hidden shadow-sm border dark:border-[#1D2939]">
+                {/* --- MODIFICATION: Check galleryImages length --- */}
                 <img
-                  src={galleryImages[activeImageIndex]}
+                  src={
+                    galleryImages[activeImageIndex] ||
+                    "https://placehold.co/600x400"
+                  }
                   alt={`Room view ${activeImageIndex + 1}`}
                   className="w-full h-[400px] md:h-[500px] object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -583,20 +569,25 @@ export default function RoomDetailsPage() {
                   {activeImageIndex + 1} / {galleryImages.length}
                 </span>
 
-                <button
-                  onClick={prevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full p-2 transition-all duration-200 opacity-0 group-hover:opacity-100"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-12 w-12 text-white" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-2 transition-all duration-200 opacity-0 group-hover:opacity-100"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-12 w-12 text-white" />
-                </button>
+                {galleryImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full p-2 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="h-12 w-12 text-white" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-2 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="h-12 w-12 text-white" />
+                    </button>
+                  </>
+                )}
+
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
                   {galleryImages.map((_, index) => (
                     <button
@@ -755,7 +746,7 @@ export default function RoomDetailsPage() {
                         key={amenity.id}
                         className="bg-[#EFF6FF] text-blue-600 border border-blue-200 rounded-full px-4 py-2 text-sm font-medium hover:from-blue-100 hover:to-indigo-100 transition-all cursor-default dark:bg-[#162142]  dark:border-[#162142] dark:text-[#98A2B3]"
                       >
-                        {amenity.name} TEST
+                        {amenity.name}
                       </span>
                     ))}
                   </div>
