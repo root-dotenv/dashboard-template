@@ -286,420 +286,6 @@
 //   );
 // }
 
-// // src/pages/bookings/Step1_SelectRoom.tsx
-// "use client";
-// import { useState } from "react";
-// import { useQuery } from "@tanstack/react-query";
-// import { format, differenceInDays } from "date-fns";
-// import { useBookingStore } from "@/store/booking.store";
-// import { useHotel } from "@/providers/hotel-provider";
-// import hotelClient from "@/api/hotel-client";
-// import {
-//   type AvailabilityRangeResponse,
-//   type AvailableRoom,
-// } from "./booking-types";
-// import { Button } from "@/components/ui/button";
-// import { Calendar } from "@/components/ui/calendar";
-// import { Label } from "@/components/ui/label";
-// import {
-//   Popover,
-//   PopoverContent,
-//   PopoverTrigger,
-// } from "@/components/ui/popover";
-// import { toast } from "sonner";
-// import {
-//   Loader2,
-//   AlertCircle,
-//   Bed,
-//   CalendarIcon,
-//   CheckCircle,
-//   Search,
-//   Filter,
-//   MapPin,
-//   Clock,
-// } from "lucide-react";
-// import { cn } from "@/lib/utils";
-// import RoomCard from "./room-card";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-// export default function Step1_SelectRoom() {
-//   const { hotel } = useHotel();
-//   const { startDate, endDate, setDates, setSelectedRoom, setStep } =
-//     useBookingStore();
-
-//   const [checkinDate, setCheckinDate] = useState<Date | undefined>(startDate);
-//   const [checkoutDate, setCheckoutDate] = useState<Date | undefined>(endDate);
-//   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string | null>(
-//     null
-//   );
-//   const [hasSearched, setHasSearched] = useState(false);
-
-//   const {
-//     data: availabilityData,
-//     isError,
-//     error,
-//     isFetching,
-//   } = useQuery<AvailabilityRangeResponse>({
-//     queryKey: [
-//       "roomAvailabilitySearch",
-//       hotel?.id,
-//       checkinDate,
-//       checkoutDate,
-//       selectedRoomTypeId,
-//     ],
-//     queryFn: async () => {
-//       if (!hotel?.id || !checkinDate || !checkoutDate) {
-//         throw new Error("A valid hotel and date range are required.");
-//       }
-//       const params = new URLSearchParams({
-//         hotel_id: hotel.id,
-//         start_date: format(checkinDate, "yyyy-MM-dd"),
-//         end_date: format(checkoutDate, "yyyy-MM-dd"),
-//       });
-//       if (selectedRoomTypeId) {
-//         params.append("room_type_id", selectedRoomTypeId);
-//       }
-//       const response = await hotelClient.get(
-//         `rooms/availability/range/?${params.toString()}`
-//       );
-//       return response.data;
-//     },
-//     enabled: hasSearched && !!hotel?.id && !!checkinDate && !!checkoutDate,
-//     retry: 1,
-//   });
-
-//   const handleSearch = () => {
-//     if (!checkinDate || !checkoutDate) {
-//       toast.error("Please select both a check-in and check-out date.");
-//       return;
-//     }
-//     if (checkoutDate <= checkinDate) {
-//       toast.error("Check-out date must be after the check-in date.");
-//       return;
-//     }
-//     setDates({ start: checkinDate, end: checkoutDate });
-//     setHasSearched(true);
-//   };
-
-//   const handleSelectRoom = (room: AvailableRoom) => {
-//     setSelectedRoom(room);
-//     setStep(2);
-//     toast.success(`Selected room: ${room.room_type_name}`);
-//   };
-
-//   const fullyAvailableRooms =
-//     availabilityData?.rooms.filter((room) =>
-//       room.availability.every((d) => d.availability_status === "Available")
-//     ) ?? [];
-
-//   return (
-//     <div className="space-y-8 p-8">
-//       {/* Search Section */}
-//       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-//         <CardHeader>
-//           <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-white">
-//             <Search className="h-6 w-6 text-blue-600" />
-//             Find Available Rooms
-//           </CardTitle>
-//         </CardHeader>
-//         <CardContent>
-//           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
-//             <div className="lg:col-span-2">
-//               <Label
-//                 htmlFor="start-date"
-//                 className="text-sm font-semibold mb-2 block"
-//               >
-//                 Check-in Date
-//               </Label>
-//               <Popover>
-//                 <PopoverTrigger asChild>
-//                   <Button
-//                     id="start-date"
-//                     variant={"outline"}
-//                     className={cn(
-//                       "w-full justify-start text-left font-normal h-12 bg-white dark:bg-gray-800",
-//                       !checkinDate && "text-muted-foreground"
-//                     )}
-//                   >
-//                     <CalendarIcon className="mr-2 h-4 w-4" />
-//                     {checkinDate ? (
-//                       format(checkinDate, "PPP")
-//                     ) : (
-//                       <span>Select check-in date</span>
-//                     )}
-//                   </Button>
-//                 </PopoverTrigger>
-//                 <PopoverContent className="w-auto p-0" align="start">
-//                   <Calendar
-//                     mode="single"
-//                     selected={checkinDate}
-//                     onSelect={setCheckinDate}
-//                     disabled={(date) =>
-//                       date < new Date(new Date().setHours(0, 0, 0, 0))
-//                     }
-//                     initialFocus
-//                   />
-//                 </PopoverContent>
-//               </Popover>
-//             </div>
-
-//             <div className="lg:col-span-2">
-//               <Label
-//                 htmlFor="end-date"
-//                 className="text-sm font-semibold mb-2 block"
-//               >
-//                 Check-out Date
-//               </Label>
-//               <Popover>
-//                 <PopoverTrigger asChild>
-//                   <Button
-//                     id="end-date"
-//                     variant={"outline"}
-//                     className={cn(
-//                       "w-full justify-start text-left font-normal h-12 bg-white dark:bg-gray-800",
-//                       !checkoutDate && "text-muted-foreground"
-//                     )}
-//                   >
-//                     <CalendarIcon className="mr-2 h-4 w-4" />
-//                     {checkoutDate ? (
-//                       format(checkoutDate, "PPP")
-//                     ) : (
-//                       <span>Select check-out date</span>
-//                     )}
-//                   </Button>
-//                 </PopoverTrigger>
-//                 <PopoverContent className="w-auto p-0" align="start">
-//                   <Calendar
-//                     mode="single"
-//                     selected={checkoutDate}
-//                     onSelect={setCheckoutDate}
-//                     disabled={(date) =>
-//                       checkinDate ? date <= checkinDate : date < new Date()
-//                     }
-//                     initialFocus
-//                   />
-//                 </PopoverContent>
-//               </Popover>
-//             </div>
-
-//             <Button
-//               onClick={handleSearch}
-//               disabled={isFetching}
-//               className="h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-//             >
-//               {isFetching && hasSearched ? (
-//                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-//               ) : (
-//                 <Search className="mr-2 h-4 w-4" />
-//               )}
-//               Search Rooms
-//             </Button>
-//           </div>
-//         </CardContent>
-//       </Card>
-
-//       {isError && (
-//         <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-//           <CardContent className="pt-6">
-//             <div className="flex items-center gap-3 text-red-700 dark:text-red-400">
-//               <AlertCircle className="h-5 w-5 flex-shrink-0" />
-//               <div>
-//                 <p className="font-semibold">Search Error</p>
-//                 <p className="text-sm">{error.message}</p>
-//               </div>
-//             </div>
-//           </CardContent>
-//         </Card>
-//       )}
-
-//       {hasSearched && (
-//         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-//           {/* Filters Sidebar */}
-//           <div className="lg:col-span-1 space-y-6">
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2 text-lg">
-//                   <Filter className="h-5 w-5 text-blue-600" />
-//                   Filters
-//                 </CardTitle>
-//               </CardHeader>
-//               <CardContent>
-//                 <div className="space-y-4">
-//                   <div>
-//                     <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-3">
-//                       Room Types
-//                     </h4>
-//                     <div className="space-y-2">
-//                       {hotel?.room_type.map((type) => (
-//                         <div
-//                           key={type.id}
-//                           className={cn(
-//                             "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border",
-//                             selectedRoomTypeId === type.id
-//                               ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-//                               : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-//                           )}
-//                           onClick={() =>
-//                             setSelectedRoomTypeId(
-//                               selectedRoomTypeId === type.id ? null : type.id
-//                             )
-//                           }
-//                         >
-//                           {selectedRoomTypeId === type.id ? (
-//                             <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-//                           ) : (
-//                             <div className="h-5 w-5 rounded-full border-2 border-gray-400 dark:border-gray-500" />
-//                           )}
-//                           <span
-//                             className={cn(
-//                               "text-sm font-medium",
-//                               selectedRoomTypeId === type.id
-//                                 ? "text-blue-800 dark:text-blue-200"
-//                                 : "text-gray-700 dark:text-gray-200"
-//                             )}
-//                           >
-//                             {type.name}
-//                           </span>
-//                         </div>
-//                       ))}
-//                     </div>
-//                   </div>
-
-//                   {selectedRoomTypeId && (
-//                     <Button
-//                       variant="outline"
-//                       className="w-full text-sm"
-//                       onClick={() => setSelectedRoomTypeId(null)}
-//                     >
-//                       Clear Filter
-//                     </Button>
-//                   )}
-//                 </div>
-//               </CardContent>
-//             </Card>
-
-//             {/* Hotel Info Card */}
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2 text-lg">
-//                   <MapPin className="h-5 w-5 text-blue-600" />
-//                   Property Info
-//                 </CardTitle>
-//               </CardHeader>
-//               <CardContent className="space-y-3">
-//                 <div>
-//                   <p className="font-semibold text-gray-900 dark:text-white">
-//                     {hotel?.name}
-//                   </p>
-//                   <p className="text-sm text-gray-600 dark:text-gray-400">
-//                     {hotel?.room_type.length} room types available
-//                   </p>
-//                 </div>
-//                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-//                   <Clock className="h-4 w-4" />
-//                   Check-in: 3:00 PM • Check-out: 11:00 AM
-//                 </div>
-//               </CardContent>
-//             </Card>
-//           </div>
-
-//           {/* Results Section */}
-//           <div className="lg:col-span-3">
-//             {isFetching ? (
-//               <Card>
-//                 <CardContent className="pt-6">
-//                   <div className="flex justify-center items-center py-16">
-//                     <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-//                   </div>
-//                 </CardContent>
-//               </Card>
-//             ) : fullyAvailableRooms.length > 0 ? (
-//               <div className="space-y-6">
-//                 <div className="flex items-center justify-between">
-//                   <div>
-//                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-//                       {fullyAvailableRooms.length} Available Rooms
-//                     </h3>
-//                     <p className="text-gray-600 dark:text-gray-400 mt-1">
-//                       Perfect accommodations for your stay
-//                     </p>
-//                   </div>
-//                   {selectedRoomTypeId && (
-//                     <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
-//                       Filtered
-//                     </div>
-//                   )}
-//                 </div>
-
-//                 <div className="space-y-4">
-//                   {fullyAvailableRooms.map((room) => {
-//                     const duration =
-//                       checkinDate && checkoutDate
-//                         ? differenceInDays(checkoutDate, checkinDate) || 1
-//                         : 1;
-//                     return (
-//                       <RoomCard
-//                         key={room.room_id}
-//                         room={room}
-//                         duration={duration}
-//                         onSelectRoom={handleSelectRoom}
-//                       />
-//                     );
-//                   })}
-//                 </div>
-//               </div>
-//             ) : (
-//               <Card>
-//                 <CardContent className="pt-6">
-//                   <div className="text-center py-16">
-//                     <Bed className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-//                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-//                       No Rooms Available
-//                     </h3>
-//                     <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-//                       We couldn't find any available rooms matching your
-//                       criteria. Try adjusting your dates or filters.
-//                     </p>
-//                     <Button
-//                       variant="outline"
-//                       onClick={() => setHasSearched(false)}
-//                     >
-//                       Modify Search
-//                     </Button>
-//                   </div>
-//                 </CardContent>
-//               </Card>
-//             )}
-//           </div>
-//         </div>
-//       )}
-
-//       {!hasSearched && (
-//         <Card>
-//           <CardContent className="pt-6">
-//             <div className="text-center py-16">
-//               <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-//                 <Search className="h-10 w-10 text-blue-600" />
-//               </div>
-//               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-//                 Start Your Booking Journey
-//               </h3>
-//               <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
-//                 Select your check-in and check-out dates to discover available
-//                 rooms and suites for your perfect stay.
-//               </p>
-//               <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-//                 <Clock className="h-4 w-4" />
-//                 Quick and easy booking process
-//               </div>
-//             </div>
-//           </CardContent>
-//         </Card>
-//       )}
-//     </div>
-//   );
-// }
-
 // src/pages/bookings/Step1_SelectRoom.tsx
 "use client";
 import { useState } from "react";
@@ -807,9 +393,9 @@ export default function Step1_SelectRoom() {
     ) ?? [];
 
   return (
-    <div className="space-y-8 p-4 md:p-8">
+    <div className="space-y-8 p-8">
       {/* Search Section */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800 border-[1px] shadow-none">
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-white">
             <Search className="h-6 w-6 text-blue-600" />
@@ -831,7 +417,7 @@ export default function Step1_SelectRoom() {
                     id="start-date"
                     variant={"outline"}
                     className={cn(
-                      "w-full justify-start text-left font-normal h-12 bg-white dark:bg-gray-800 rounded-full border-[1px] border-gray-300 dark:border-gray-600",
+                      "w-full justify-start text-left font-normal h-12 bg-white dark:bg-gray-800",
                       !checkinDate && "text-muted-foreground"
                     )}
                   >
@@ -870,7 +456,7 @@ export default function Step1_SelectRoom() {
                     id="end-date"
                     variant={"outline"}
                     className={cn(
-                      "w-full justify-start text-left font-normal h-12 bg-white dark:bg-gray-800 rounded-full border-[1px] border-gray-300 dark:border-gray-600",
+                      "w-full justify-start text-left font-normal h-12 bg-white dark:bg-gray-800",
                       !checkoutDate && "text-muted-foreground"
                     )}
                   >
@@ -888,9 +474,7 @@ export default function Step1_SelectRoom() {
                     selected={checkoutDate}
                     onSelect={setCheckoutDate}
                     disabled={(date) =>
-                      checkinDate
-                        ? date <= checkinDate
-                        : date < new Date(new Date().setHours(0, 0, 0, 0))
+                      checkinDate ? date <= checkinDate : date < new Date()
                     }
                     initialFocus
                   />
@@ -901,7 +485,7 @@ export default function Step1_SelectRoom() {
             <Button
               onClick={handleSearch}
               disabled={isFetching}
-              className="h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full"
+              className="h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
             >
               {isFetching && hasSearched ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -915,7 +499,7 @@ export default function Step1_SelectRoom() {
       </Card>
 
       {isError && (
-        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 border-[1px] shadow-none">
+        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3 text-red-700 dark:text-red-400">
               <AlertCircle className="h-5 w-5 flex-shrink-0" />
@@ -930,101 +514,99 @@ export default function Step1_SelectRoom() {
 
       {hasSearched && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar - Now Sticky */}
-          <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-80 space-y-6">
-              <Card className="shadow-none border-[1px] border-gray-200 dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Filter className="h-5 w-5 text-blue-600" />
-                    Filters
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-3">
-                        Room Types
-                      </h4>
-                      <div className="space-y-2">
-                        {hotel?.room_type.map((type) => (
-                          <div
-                            key={type.id}
-                            className={cn(
-                              "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border-[1px]",
-                              selectedRoomTypeId === type.id
-                                ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                                : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            )}
-                            onClick={() =>
-                              setSelectedRoomTypeId(
-                                selectedRoomTypeId === type.id ? null : type.id
-                              )
-                            }
-                          >
-                            {selectedRoomTypeId === type.id ? (
-                              <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            ) : (
-                              <div className="h-5 w-5 rounded-full border-2 border-gray-400 dark:border-gray-500" />
-                            )}
-                            <span
-                              className={cn(
-                                "text-sm font-medium",
-                                selectedRoomTypeId === type.id
-                                  ? "text-blue-800 dark:text-blue-200"
-                                  : "text-gray-700 dark:text-gray-200"
-                              )}
-                            >
-                              {type.name}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {selectedRoomTypeId && (
-                      <Button
-                        variant="outline"
-                        className="w-full text-sm rounded-full"
-                        onClick={() => setSelectedRoomTypeId(null)}
-                      >
-                        Clear Filter
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Hotel Info Card */}
-              <Card className="shadow-none border-[1px] border-gray-200 dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <MapPin className="h-5 w-5 text-blue-600" />
-                    Property Info
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+          {/* Filters Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Filter className="h-5 w-5 text-blue-600" />
+                  Filters
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {hotel?.name}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {hotel?.room_type.length} room types available
-                    </p>
+                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-3">
+                      Room Types
+                    </h4>
+                    <div className="space-y-2">
+                      {hotel?.room_type.map((type) => (
+                        <div
+                          key={type.id}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border",
+                            selectedRoomTypeId === type.id
+                              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                              : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          )}
+                          onClick={() =>
+                            setSelectedRoomTypeId(
+                              selectedRoomTypeId === type.id ? null : type.id
+                            )
+                          }
+                        >
+                          {selectedRoomTypeId === type.id ? (
+                            <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          ) : (
+                            <div className="h-5 w-5 rounded-full border-2 border-gray-400 dark:border-gray-500" />
+                          )}
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              selectedRoomTypeId === type.id
+                                ? "text-blue-800 dark:text-blue-200"
+                                : "text-gray-700 dark:text-gray-200"
+                            )}
+                          >
+                            {type.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Clock className="h-4 w-4" />
-                    Check-in Time: 3:00 PM • Check-out Time: 11:00 AM
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+
+                  {selectedRoomTypeId && (
+                    <Button
+                      variant="outline"
+                      className="w-full text-sm"
+                      onClick={() => setSelectedRoomTypeId(null)}
+                    >
+                      Clear Filter
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Hotel Info Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MapPin className="h-5 w-5 text-blue-600" />
+                  Property Info
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {hotel?.name}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {hotel?.room_type.length} room types available
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Clock className="h-4 w-4" />
+                  Check-in: 3:00 PM • Check-out: 11:00 AM
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Results Section */}
           <div className="lg:col-span-3">
             {isFetching ? (
-              <Card className="shadow-none border-[1px] border-gray-200 dark:border-gray-700">
+              <Card>
                 <CardContent className="pt-6">
                   <div className="flex justify-center items-center py-16">
                     <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
@@ -1033,7 +615,7 @@ export default function Step1_SelectRoom() {
               </Card>
             ) : fullyAvailableRooms.length > 0 ? (
               <div className="space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                       {fullyAvailableRooms.length} Available Rooms
@@ -1043,7 +625,7 @@ export default function Step1_SelectRoom() {
                     </p>
                   </div>
                   {selectedRoomTypeId && (
-                    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium mt-2 md:mt-0 self-start">
+                    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
                       Filtered
                     </div>
                   )}
@@ -1067,7 +649,7 @@ export default function Step1_SelectRoom() {
                 </div>
               </div>
             ) : (
-              <Card className="shadow-none border-[1px] border-gray-200 dark:border-gray-700">
+              <Card>
                 <CardContent className="pt-6">
                   <div className="text-center py-16">
                     <Bed className="mx-auto h-16 w-16 text-gray-400 mb-4" />
@@ -1081,7 +663,6 @@ export default function Step1_SelectRoom() {
                     <Button
                       variant="outline"
                       onClick={() => setHasSearched(false)}
-                      className="rounded-full"
                     >
                       Modify Search
                     </Button>
@@ -1094,7 +675,7 @@ export default function Step1_SelectRoom() {
       )}
 
       {!hasSearched && (
-        <Card className="shadow-none border-[1px] border-gray-200 dark:border-gray-700">
+        <Card>
           <CardContent className="pt-6">
             <div className="text-center py-16">
               <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
