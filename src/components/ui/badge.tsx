@@ -21,7 +21,7 @@ const badgeVariants = cva(
         success:
           "flex items-center justify-center bg-[#ECFDF3] rounded-md border border-green-200 text-[13px] text-[#039855] font-medium px-[12px] py-[1.75px]",
         pending:
-          "flex items-center justify-center bg-[#FFFAEB] rounded-md border border-orange-200 text-[13px] text-[#DC6803] font-medium px-[12px] py-[1.75px]",
+          "flex items-center justify-center bg-[#FEF9C2] rounded-md border border-[#FFF085] text-[13px] text-[#884A00] font-medium px-[12px] py-[1.75px] dark:bg-[#473123] dark:border-[#804D00] dark:text-[#FDC700]",
         failed:
           "flex items-center justify-center bg-[#FEF3F2] rounded-md border border-red-200 text-[13px] text-[#D92D20] font-medium px-[12px] py-[1.75px]",
       },
